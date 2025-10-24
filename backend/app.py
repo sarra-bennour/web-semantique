@@ -6,6 +6,8 @@ from modules.events import events_bp
 from modules.locations import locations_bp
 from modules.users import users_bp
 from modules.search import search_bp
+from modules.reservations import reservations_bp
+from modules.certifications import certifications_bp
 from sparql_utils import sparql_utils
 
 app = Flask(__name__)
@@ -17,6 +19,8 @@ app.register_blueprint(events_bp, url_prefix='/api')
 app.register_blueprint(locations_bp, url_prefix='/api')
 app.register_blueprint(users_bp, url_prefix='/api')
 app.register_blueprint(search_bp, url_prefix='/api')
+app.register_blueprint(reservations_bp, url_prefix='/api')
+app.register_blueprint(certifications_bp, url_prefix='/api')
 
 
 @app.route('/')

@@ -14,7 +14,7 @@ def load_ontology_to_fuseki():
         print("Chargement du fichier RDF...")
         
         # Parser en ignorant les erreurs
-        g.parse("../data/eco-ontology.rdf", format="xml", errors='ignore')
+        g.parse("data/eco-ontology.rdf", format="xml", errors='ignore')
         print(f"Ontologie chargée: {len(g)} triplets trouvés")
         
         # Upload vers Fuseki par lots de triplets
@@ -53,7 +53,7 @@ def load_ontology_to_fuseki():
                 error_count += 1
                 continue
         
-        print(f"✅ Upload terminé: {success_count} triplets chargés, {error_count} erreurs")
+        print(f"Upload termine: {success_count} triplets charges, {error_count} erreurs")
         
         # Vérifier que les données sont bien chargées
         test_query = "SELECT (COUNT(*) as ?count) WHERE { ?s ?p ?o }"
@@ -63,10 +63,10 @@ def load_ontology_to_fuseki():
         if response.status_code == 200:
             data = response.json()
             count = data['results']['bindings'][0]['count']['value']
-            print(f"📊 Total des triplets dans Fuseki: {count}")
+            print(f"Total des triplets dans Fuseki: {count}")
             
     except Exception as e:
-        print(f"❌ Erreur: {str(e)}")
+        print(f"Erreur: {str(e)}")
 
 def clear_dataset():
     """Vider le dataset avant de charger les nouvelles données"""
@@ -80,32 +80,32 @@ def clear_dataset():
         response = requests.post(FUSEKI_UPDATE, data=clear_query, headers=headers)
         
         if response.status_code in [200, 204]:
-            print("✅ Dataset vidé avec succès")
+            print("Dataset vide avec succes")
         else:
-            print(f"⚠️ Impossible de vider le dataset: {response.status_code}")
+            print(f"Impossible de vider le dataset: {response.status_code}")
             
     except Exception as e:
-        print(f"⚠️ Erreur lors du vidage: {str(e)}")
+        print(f"Erreur lors du vidage: {str(e)}")
 
 def test_fuseki_connection():
     """Tester la connexion à Fuseki"""
     try:
         response = requests.get(FUSEKI_ENDPOINT)
         if response.status_code == 200:
-            print("✅ Connexion à Fuseki réussie")
+            print("Connexion a Fuseki reussie")
             return True
         else:
-            print(f"❌ Fuseki ne répond pas: {response.status_code}")
+            print(f"Fuseki ne repond pas: {response.status_code}")
             return False
     except Exception as e:
-        print(f"❌ Impossible de se connecter à Fuseki: {str(e)}")
+        print(f"Impossible de se connecter a Fuseki: {str(e)}")
         return False
 
 if __name__ == '__main__':
-    print("🚀 Début du chargement des données...")
+    print("Debut du chargement des donnees...")
     
     if test_fuseki_connection():
         clear_dataset()
         load_ontology_to_fuseki()
     else:
-        print("❌ Veuillez démarrer Fuseki d'abord: ./fuseki-server")
+        print("Veuillez demarrer Fuseki d'abord: ./fuseki-server")

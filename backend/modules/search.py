@@ -300,6 +300,119 @@ def transform_question_to_sparql_combined(question):
         LIMIT 20
         """
     
+    # QUESTIONS SUR LES RÉSERVATIONS (priorité sur les événements)
+    elif any(word in question_lower for word in ['réservation', 'reservation', 'réserver', 'booking']) or 'réservation' in question_lower:
+        if 'confirmé' in question_lower or 'confirmed' in question_lower:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userEmail
+            WHERE {
+                ?reservation a eco:Reservation .
+                ?reservation webprotege:R9wdyKGFoajnFCFN4oqnwHr ?status .
+                FILTER(LCASE(STR(?status)) = "confirmed")
+                OPTIONAL { ?reservation webprotege:R7QgAmvOpBSpwRmRrDZL8VE ?seatNumber . }
+                OPTIONAL { 
+                    ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
+                    ?event eco:eventTitle ?eventTitle .
+                }
+                OPTIONAL { 
+                    ?reservation eco:belongsToUser ?user .
+                    ?user eco:firstName ?userName .
+                    OPTIONAL { ?user eco:email ?userEmail . }
+                }
+            }
+            ORDER BY ?reservation
+            """
+        elif 'attente' in question_lower or 'pending' in question_lower:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userEmail
+            WHERE {
+                ?reservation a eco:Reservation .
+                ?reservation webprotege:R9wdyKGFoajnFCFN4oqnwHr ?status .
+                FILTER(LCASE(STR(?status)) = "pending")
+                OPTIONAL { ?reservation webprotege:R7QgAmvOpBSpwRmRrDZL8VE ?seatNumber . }
+                OPTIONAL { 
+                    ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
+                    ?event eco:eventTitle ?eventTitle .
+                }
+                OPTIONAL { 
+                    ?reservation eco:belongsToUser ?user .
+                    ?user eco:firstName ?userName .
+                    OPTIONAL { ?user eco:email ?userEmail . }
+                }
+            }
+            ORDER BY ?reservation
+            """
+        elif 'annulé' in question_lower or 'cancelled' in question_lower:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userEmail
+            WHERE {
+                ?reservation a eco:Reservation .
+                ?reservation webprotege:R9wdyKGFoajnFCFN4oqnwHr ?status .
+                FILTER(LCASE(STR(?status)) = "cancelled")
+                OPTIONAL { ?reservation webprotege:R7QgAmvOpBSpwRmRrDZL8VE ?seatNumber . }
+                OPTIONAL { 
+                    ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
+                    ?event eco:eventTitle ?eventTitle .
+                }
+                OPTIONAL { 
+                    ?reservation eco:belongsToUser ?user .
+                    ?user eco:firstName ?userName .
+                    OPTIONAL { ?user eco:email ?userEmail . }
+                }
+            }
+            ORDER BY ?reservation
+            """
+        elif 'par événement' in question_lower or 'par event' in question_lower or 'groupé' in question_lower:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT ?eventTitle (COUNT(?reservation) as ?reservationCount) ?eventDate ?locationName
+            WHERE {
+                ?reservation a eco:Reservation .
+                ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
+                ?event eco:eventTitle ?eventTitle .
+                OPTIONAL { ?event eco:eventDate ?eventDate . }
+                OPTIONAL { 
+                    ?event eco:isLocatedAt ?location .
+                    ?location eco:locationName ?locationName .
+                }
+            }
+            GROUP BY ?eventTitle ?eventDate ?locationName
+            ORDER BY ?eventTitle
+            """
+        else:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userEmail
+            WHERE {
+                ?reservation a eco:Reservation .
+                OPTIONAL { ?reservation webprotege:R7QgAmvOpBSpwRmRrDZL8VE ?seatNumber . }
+                OPTIONAL { ?reservation webprotege:R9wdyKGFoajnFCFN4oqnwHr ?status . }
+                OPTIONAL { 
+                    ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
+                    ?event eco:eventTitle ?eventTitle .
+                }
+                OPTIONAL { 
+                    ?reservation eco:belongsToUser ?user .
+                    ?user eco:firstName ?userName .
+                    OPTIONAL { ?user eco:email ?userEmail . }
+                }
+            }
+            ORDER BY ?reservation
+            """
+
     # QUESTIONS SUR LES ÉVÉNEMENTS (from the first function)
     elif any(word in question_lower for word in ['événement', 'event', 'évènement']):
         if 'où' in question_lower or 'where' in question_lower or 'lieu' in question_lower:
@@ -451,6 +564,108 @@ def transform_question_to_sparql_combined(question):
                 OPTIONAL { ?user eco:registrationDate ?registrationDate . }
             }
             ORDER BY ?lastName ?firstName
+            """
+    
+    # QUESTIONS SUR LES CERTIFICATIONS
+    elif any(word in question_lower for word in ['certification', 'certificat', 'diplôme', 'récompense', 'badge']):
+        if 'participation' in question_lower:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT ?certification ?certificateCode ?pointsEarned ?type ?issuerName ?issuerEmail
+            WHERE {
+                ?certification a eco:Certification .
+                ?certification webprotege:RBPJvon09P5n1GLdLbu2esV ?type .
+                FILTER(CONTAINS(LCASE(STR(?type)), "participation"))
+                OPTIONAL { ?certification webprotege:R9QGoktbkOBbsLkvgjicNA8 ?certificateCode . }
+                OPTIONAL { ?certification webprotege:R9gsGMKtVBKEAd4d8I75UkC ?pointsEarned . }
+                OPTIONAL { 
+                    ?certification eco:issuedBy ?issuer .
+                    ?issuer eco:firstName ?issuerName .
+                    OPTIONAL { ?issuer eco:email ?issuerEmail . }
+                }
+            }
+            ORDER BY ?certification
+            """
+        elif 'accomplissement' in question_lower or 'achievement' in question_lower:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT ?certification ?certificateCode ?pointsEarned ?type ?issuerName ?issuerEmail
+            WHERE {
+                ?certification a eco:Certification .
+                ?certification webprotege:RBPJvon09P5n1GLdLbu2esV ?type .
+                FILTER(CONTAINS(LCASE(STR(?type)), "achievement"))
+                OPTIONAL { ?certification webprotege:R9QGoktbkOBbsLkvgjicNA8 ?certificateCode . }
+                OPTIONAL { ?certification webprotege:R9gsGMKtVBKEAd4d8I75UkC ?pointsEarned . }
+                OPTIONAL { 
+                    ?certification eco:issuedBy ?issuer .
+                    ?issuer eco:firstName ?issuerName .
+                    OPTIONAL { ?issuer eco:email ?issuerEmail . }
+                }
+            }
+            ORDER BY ?certification
+            """
+        elif 'points' in question_lower or 'eco-points' in question_lower:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT ?certification ?certificateCode ?pointsEarned ?type ?issuerName ?issuerEmail
+            WHERE {
+                ?certification a eco:Certification .
+                ?certification webprotege:RBPJvon09P5n1GLdLbu2esV ?type .
+                FILTER(CONTAINS(LCASE(STR(?type)), "points"))
+                OPTIONAL { ?certification webprotege:R9QGoktbkOBbsLkvgjicNA8 ?certificateCode . }
+                OPTIONAL { ?certification webprotege:R9gsGMKtVBKEAd4d8I75UkC ?pointsEarned . }
+                OPTIONAL { 
+                    ?certification eco:issuedBy ?issuer .
+                    ?issuer eco:firstName ?issuerName .
+                    OPTIONAL { ?issuer eco:email ?issuerEmail . }
+                }
+            }
+            ORDER BY DESC(?pointsEarned)
+            """
+        elif 'leadership' in question_lower or 'leader' in question_lower:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT ?certification ?certificateCode ?pointsEarned ?type ?issuerName ?issuerEmail
+            WHERE {
+                ?certification a eco:Certification .
+                ?certification webprotege:RBPJvon09P5n1GLdLbu2esV ?type .
+                FILTER(CONTAINS(LCASE(STR(?type)), "leadership"))
+                OPTIONAL { ?certification webprotege:R9QGoktbkOBbsLkvgjicNA8 ?certificateCode . }
+                OPTIONAL { ?certification webprotege:R9gsGMKtVBKEAd4d8I75UkC ?pointsEarned . }
+                OPTIONAL { 
+                    ?certification eco:issuedBy ?issuer .
+                    ?issuer eco:firstName ?issuerName .
+                    OPTIONAL { ?issuer eco:email ?issuerEmail . }
+                }
+            }
+            ORDER BY ?certification
+            """
+        else:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT ?certification ?certificateCode ?pointsEarned ?type ?issuerName ?issuerEmail
+            WHERE {
+                ?certification a eco:Certification .
+                OPTIONAL { ?certification webprotege:R9QGoktbkOBbsLkvgjicNA8 ?certificateCode . }
+                OPTIONAL { ?certification webprotege:R9gsGMKtVBKEAd4d8I75UkC ?pointsEarned . }
+                OPTIONAL { ?certification webprotege:RBPJvon09P5n1GLdLbu2esV ?type . }
+                OPTIONAL { 
+                    ?certification eco:issuedBy ?issuer .
+                    ?issuer eco:firstName ?issuerName .
+                    OPTIONAL { ?issuer eco:email ?issuerEmail . }
+                }
+            }
+            ORDER BY ?certification
             """
     
     # REQUÊTE PAR DÉFAUT AMÉLIORÉE
