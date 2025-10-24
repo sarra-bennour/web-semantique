@@ -16,7 +16,16 @@ const SemanticSearch = () => {
     "Quels sont les volontaires ?",
     "Quels événements ont lieu à Paris ?",
     "Quelles sont les campagnes actives ?",
-    "Quelles ressources sont disponibles ?"
+    "Quelles ressources sont disponibles ?",
+    "Quelles réservations sont confirmées ?",
+    "Qui a fait des réservations ?",
+    "Quelles réservations sont en attente ?",
+    "Montre-moi les réservations par événement",
+    "Quelles certifications ont été émises ?",
+    "Qui a reçu des certifications ?",
+    "Quels types de certifications existent ?",
+    "Montre-moi les certifications par points",
+    "Qui émet les certifications ?"
   ];
 
   const handleSearch = async (e) => {
@@ -134,7 +143,7 @@ const SemanticSearch = () => {
   return (
     <div className="semantic-search">
       <h1>Recherche Sémantique</h1>
-      <p>Posez votre question en langage naturel sur les événements, locations, utilisateurs et campagnes</p>
+      <p>Posez votre question en langage naturel sur les événements, locations, utilisateurs, campagnes, réservations et certifications</p>
       
       <form onSubmit={handleSearch} className="search-form">
         <input

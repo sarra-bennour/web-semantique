@@ -155,6 +155,17 @@
     
 
 
+    <!-- http://www.semanticweb.org/eco-ontology#confirmedBy -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/eco-ontology#confirmedBy">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/eco-ontology#Reservation"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/eco-ontology#User"/>
+        <rdfs:comment>Reservation is confirmed by admin user</rdfs:comment>
+        <rdfs:label>confirmed by</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://www.semanticweb.org/eco-ontology#fundsEvent -->
 
     <owl:ObjectProperty rdf:about="http://www.semanticweb.org/eco-ontology#fundsEvent">
@@ -262,6 +273,17 @@
         <rdfs:range rdf:resource="http://www.semanticweb.org/eco-ontology#User"/>
         <rdfs:comment>Certification is issued by user</rdfs:comment>
         <rdfs:label>issued by</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/eco-ontology#awardedTo -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/eco-ontology#awardedTo">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/eco-ontology#Certification"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/eco-ontology#User"/>
+        <rdfs:comment>Certification is awarded to user</rdfs:comment>
+        <rdfs:label>awarded to</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -1884,7 +1906,8 @@
     <owl:NamedIndividual rdf:about="http://webprotege.stanford.edu/RBg6SnCnVtXmJVKRP6DxJEA">
         <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#Reservation"/>
         <webprotege:R8r5yxVXnZfa0TwP5biVHiL rdf:resource="http://www.semanticweb.org/eco-ontology#ClimateWorkshop"/>
-        <belongsToUser rdf:resource="http://www.semanticweb.org/eco-ontology#JaneSmith"/>
+        <belongsToUser rdf:resource="http://www.semanticweb.org/eco-ontology#MarieMartin"/>
+        <confirmedBy rdf:resource="http://www.semanticweb.org/eco-ontology#AdminUser"/>
         <webprotege:R7QgAmvOpBSpwRmRrDZL8VE>A1</webprotege:R7QgAmvOpBSpwRmRrDZL8VE>
         <webprotege:R9wdyKGFoajnFCFN4oqnwHr>confirmed</webprotege:R9wdyKGFoajnFCFN4oqnwHr>
         <rdfs:label>reservation1</rdfs:label>
@@ -1896,13 +1919,99 @@
 
     <owl:NamedIndividual rdf:about="http://webprotege.stanford.edu/RCglywDKxiDpyxbag1C6jnH">
         <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#Certification"/>
-        <issuedBy rdf:resource="http://www.semanticweb.org/eco-ontology#JohnDoe"/>
+        <issuedBy rdf:resource="http://www.semanticweb.org/eco-ontology#AdminUser"/>
+        <awardedTo rdf:resource="http://www.semanticweb.org/eco-ontology#MarieMartin"/>
         <webprotege:R9QGoktbkOBbsLkvgjicNA8>ECO-ABC12345</webprotege:R9QGoktbkOBbsLkvgjicNA8>
         <webprotege:R9gsGMKtVBKEAd4d8I75UkC rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">10</webprotege:R9gsGMKtVBKEAd4d8I75UkC>
         <webprotege:RBPJvon09P5n1GLdLbu2esV>participation</webprotege:RBPJvon09P5n1GLdLbu2esV>
         <rdfs:label>certification1</rdfs:label>
     </owl:NamedIndividual>
     
+
+
+    <!-- http://www.semanticweb.org/eco-ontology#reservation2 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#reservation2">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#Reservation"/>
+        <webprotege:R8r5yxVXnZfa0TwP5biVHiL rdf:resource="http://www.semanticweb.org/eco-ontology#EcoMarathon2024"/>
+        <belongsToUser rdf:resource="http://www.semanticweb.org/eco-ontology#PierreDurand"/>
+        <webprotege:R7QgAmvOpBSpwRmRrDZL8VE>B15</webprotege:R7QgAmvOpBSpwRmRrDZL8VE>
+        <webprotege:R9wdyKGFoajnFCFN4oqnwHr>pending</webprotege:R9wdyKGFoajnFCFN4oqnwHr>
+        <rdfs:label>reservation2</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/eco-ontology#reservation3 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#reservation3">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#Reservation"/>
+        <webprotege:R8r5yxVXnZfa0TwP5biVHiL rdf:resource="http://www.semanticweb.org/eco-ontology#GreenFilmScreening"/>
+        <belongsToUser rdf:resource="http://www.semanticweb.org/eco-ontology#SophieLeblanc"/>
+        <confirmedBy rdf:resource="http://www.semanticweb.org/eco-ontology#AdminUser"/>
+        <webprotege:R7QgAmvOpBSpwRmRrDZL8VE>C22</webprotege:R7QgAmvOpBSpwRmRrDZL8VE>
+        <webprotege:R9wdyKGFoajnFCFN4oqnwHr>cancelled</webprotege:R9wdyKGFoajnFCFN4oqnwHr>
+        <rdfs:label>reservation3</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/eco-ontology#reservation4 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#reservation4">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#Reservation"/>
+        <webprotege:R8r5yxVXnZfa0TwP5biVHiL rdf:resource="http://www.semanticweb.org/eco-ontology#SustainableAgricultureWorkshop"/>
+        <belongsToUser rdf:resource="http://www.semanticweb.org/eco-ontology#LucasRobert"/>
+        <confirmedBy rdf:resource="http://www.semanticweb.org/eco-ontology#AdminUser"/>
+        <webprotege:R7QgAmvOpBSpwRmRrDZL8VE>D5</webprotege:R7QgAmvOpBSpwRmRrDZL8VE>
+        <webprotege:R9wdyKGFoajnFCFN4oqnwHr>confirmed</webprotege:R9wdyKGFoajnFCFN4oqnwHr>
+        <rdfs:label>reservation4</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/eco-ontology#reservation5 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#reservation5">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#Reservation"/>
+        <webprotege:R8r5yxVXnZfa0TwP5biVHiL rdf:resource="http://www.semanticweb.org/eco-ontology#EcoMusicFestival"/>
+        <belongsToUser rdf:resource="http://www.semanticweb.org/eco-ontology#JaneSmith"/>
+        <confirmedBy rdf:resource="http://www.semanticweb.org/eco-ontology#AdminUser"/>
+        <webprotege:R7QgAmvOpBSpwRmRrDZL8VE>VIP1</webprotege:R7QgAmvOpBSpwRmRrDZL8VE>
+        <webprotege:R9wdyKGFoajnFCFN4oqnwHr>confirmed</webprotege:R9wdyKGFoajnFCFN4oqnwHr>
+        <rdfs:label>reservation5</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/eco-ontology#certification2 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#certification2">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#Certification"/>
+        <issuedBy rdf:resource="http://www.semanticweb.org/eco-ontology#AdminUser"/>
+        <awardedTo rdf:resource="http://www.semanticweb.org/eco-ontology#LucasRobert"/>
+        <webprotege:R9QGoktbkOBbsLkvgjicNA8>ECO-DEF67890</webprotege:R9QGoktbkOBbsLkvgjicNA8>
+        <webprotege:R9gsGMKtVBKEAd4d8I75UkC rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">25</webprotege:R9gsGMKtVBKEAd4d8I75UkC>
+        <webprotege:RBPJvon09P5n1GLdLbu2esV>achievement</webprotege:RBPJvon09P5n1GLdLbu2esV>
+        <rdfs:label>certification2</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/eco-ontology#certification3 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#certification3">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#Certification"/>
+        <issuedBy rdf:resource="http://www.semanticweb.org/eco-ontology#AdminUser"/>
+        <awardedTo rdf:resource="http://www.semanticweb.org/eco-ontology#JaneSmith"/>
+        <webprotege:R9QGoktbkOBbsLkvgjicNA8>ECO-GHI11223</webprotege:R9QGoktbkOBbsLkvgjicNA8>
+        <webprotege:R9gsGMKtVBKEAd4d8I75UkC rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">50</webprotege:R9gsGMKtVBKEAd4d8I75UkC>
+        <webprotege:RBPJvon09P5n1GLdLbu2esV>eco-points</webprotege:RBPJvon09P5n1GLdLbu2esV>
+        <rdfs:label>certification3</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
 
 
     <!-- http://webprotege.stanford.edu/RD2YKfLkOpJdarKVIu6bdGu -->
@@ -2100,7 +2209,7 @@
         <lastName>Smith</lastName>
         <phone>+1-555-0103</phone>
         <registrationDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-01-20T14:15:00</registrationDate>
-        <role>Volunteer</role>
+        <role>User</role>
     </owl:NamedIndividual>
     
 
@@ -2114,7 +2223,77 @@
         <lastName>Doe</lastName>
         <phone>+1-555-0100</phone>
         <registrationDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-01-15T10:30:00</registrationDate>
-        <role>Event Organizer</role>
+        <role>User</role>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/eco-ontology#AdminUser -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#AdminUser">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#User"/>
+        <email>admin@ecoplatform.com</email>
+        <firstName>Admin</firstName>
+        <lastName>EcoPlatform</lastName>
+        <phone>+1-555-0001</phone>
+        <registrationDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-01-01T08:00:00</registrationDate>
+        <role>Admin</role>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/eco-ontology#MarieMartin -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#MarieMartin">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#User"/>
+        <email>marie.martin@email.com</email>
+        <firstName>Marie</firstName>
+        <lastName>Martin</lastName>
+        <phone>+1-555-0200</phone>
+        <registrationDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-02-10T09:15:00</registrationDate>
+        <role>User</role>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/eco-ontology#PierreDurand -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#PierreDurand">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#User"/>
+        <email>pierre.durand@email.com</email>
+        <firstName>Pierre</firstName>
+        <lastName>Durand</lastName>
+        <phone>+1-555-0201</phone>
+        <registrationDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-02-15T11:30:00</registrationDate>
+        <role>User</role>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/eco-ontology#SophieLeblanc -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#SophieLeblanc">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#User"/>
+        <email>sophie.leblanc@email.com</email>
+        <firstName>Sophie</firstName>
+        <lastName>Leblanc</lastName>
+        <phone>+1-555-0202</phone>
+        <registrationDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-02-20T14:45:00</registrationDate>
+        <role>User</role>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/eco-ontology#LucasRobert -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#LucasRobert">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#User"/>
+        <email>lucas.robert@email.com</email>
+        <firstName>Lucas</firstName>
+        <lastName>Robert</lastName>
+        <phone>+1-555-0203</phone>
+        <registrationDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-02-25T16:20:00</registrationDate>
+        <role>User</role>
     </owl:NamedIndividual>
     
 
