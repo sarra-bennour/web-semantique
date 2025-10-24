@@ -10,7 +10,8 @@ Plateforme de gestion des campagnes écologiques utilisant une ontologie OWL.
 ## Installation
 1. Backend: `cd backend && pip install -r requirements.txt`
 2. Frontend: `cd frontend && npm install`
-3. Fuseki: Lancer `./fuseki-server` dans le dossier fuseki
+3. Fuseki: Lancer `./fuseki-server --mem /eco-ontology` dans le dossier fuseki
+4. Lancer la commande `python load_data.py` dans le dossier scripts
 
 ## Lancement
 1. Démarrer Fuseki
