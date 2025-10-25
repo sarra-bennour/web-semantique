@@ -1987,7 +1987,7 @@
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#reservation6">
         <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#Reservation"/>
-        <webprotege:R8r5yxVXnZfa0TwP5biVHiL rdf:resource="http://www.semanticweb.org/eco-ontology#ClimateChangeSolutionsWorkshop"/>
+        <webprotege:R8r5yxVXnZfa0TwP5biVHiL rdf:resource="http://www.semanticweb.org/eco-ontology#ClimateWorkshop"/>
         <belongsToUser rdf:resource="http://www.semanticweb.org/eco-ontology#PierreDurand"/>
         <confirmedBy rdf:resource="http://www.semanticweb.org/eco-ontology#AdminUser"/>
         <webprotege:R7QgAmvOpBSpwRmRrDZL8VE>A2</webprotege:R7QgAmvOpBSpwRmRrDZL8VE>
@@ -2000,7 +2000,7 @@
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#reservation7">
         <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#Reservation"/>
-        <webprotege:R8r5yxVXnZfa0TwP5biVHiL rdf:resource="http://www.semanticweb.org/eco-ontology#ClimateChangeSolutionsWorkshop"/>
+        <webprotege:R8r5yxVXnZfa0TwP5biVHiL rdf:resource="http://www.semanticweb.org/eco-ontology#ClimateWorkshop"/>
         <belongsToUser rdf:resource="http://www.semanticweb.org/eco-ontology#SophieLeblanc"/>
         <webprotege:R7QgAmvOpBSpwRmRrDZL8VE>A3</webprotege:R7QgAmvOpBSpwRmRrDZL8VE>
         <webprotege:R9wdyKGFoajnFCFN4oqnwHr>pending</webprotege:R9wdyKGFoajnFCFN4oqnwHr>
