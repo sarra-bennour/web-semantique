@@ -29,13 +29,13 @@ const Navbar = () => {
             <Link to="/certifications" className="nav-link">Certifications</Link>
           </li>
           <li className="nav-item">
-            <Link to="/" className="nav-link">Sponsors</Link>
+            <Link to="*" className="nav-link">Sponsors</Link>
           </li>
           <li className="nav-item">
-            <Link to="/" className="nav-link">Donations</Link>
+            <Link to="*" className="nav-link">Donations</Link>
           </li>
           <li className="nav-item">
-            <Link to="/" className="nav-link">Blogs</Link>
+            <Link to="*" className="nav-link">Blogs</Link>
           </li>
 
           <li className="nav-item">
