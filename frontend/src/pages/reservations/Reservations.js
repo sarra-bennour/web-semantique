@@ -168,7 +168,10 @@ const Reservations = () => {
                                     <div className="detail-row">
                                         <span className="detail-label">Utilisateur:</span>
                                         <span className="detail-value">
-                                            {reservation.userName || 'Non spécifié'}
+                                            {reservation.userName && reservation.userLastName 
+                                                ? `${reservation.userName} ${reservation.userLastName}`
+                                                : reservation.userName || 'Non spécifié'
+                                            }
                                         </span>
                                     </div>
                                     {reservation.userEmail && (

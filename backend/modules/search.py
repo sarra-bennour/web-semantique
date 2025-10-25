@@ -608,6 +608,28 @@ def transform_question_to_sparql_combined(question):
             }
             ORDER BY ?certification
             """
+        elif 'par points' in question_lower:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT ?certification ?certificateCode ?pointsEarned ?type ?awardedToName ?issuerName
+            WHERE {
+                ?certification a eco:Certification .
+                OPTIONAL { ?certification webprotege:R9QGoktbkOBbsLkvgjicNA8 ?certificateCode . }
+                OPTIONAL { ?certification webprotege:R9gsGMKtVBKEAd4d8I75UkC ?pointsEarned . }
+                OPTIONAL { ?certification webprotege:RBPJvon09P5n1GLdLbu2esV ?type . }
+                OPTIONAL { 
+                    ?certification eco:awardedTo ?recipient .
+                    ?recipient eco:firstName ?awardedToName .
+                }
+                OPTIONAL { 
+                    ?certification eco:issuedBy ?issuer .
+                    ?issuer eco:firstName ?issuerName .
+                }
+            }
+            ORDER BY DESC(?pointsEarned)
+            """
         elif 'points' in question_lower or 'eco-points' in question_lower:
             return """
             PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
@@ -627,6 +649,55 @@ def transform_question_to_sparql_combined(question):
                 }
             }
             ORDER BY DESC(?pointsEarned)
+            """
+        elif 'reçu' in question_lower or 'reçu' in question_lower or 'awarded' in question_lower:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT ?certification ?certificateCode ?pointsEarned ?type ?awardedToName ?awardedToEmail ?issuerName
+            WHERE {
+                ?certification a eco:Certification .
+                ?certification eco:awardedTo ?recipient .
+                ?recipient eco:firstName ?awardedToName .
+                OPTIONAL { ?recipient eco:email ?awardedToEmail . }
+                OPTIONAL { ?certification webprotege:R9QGoktbkOBbsLkvgjicNA8 ?certificateCode . }
+                OPTIONAL { ?certification webprotege:R9gsGMKtVBKEAd4d8I75UkC ?pointsEarned . }
+                OPTIONAL { ?certification webprotege:RBPJvon09P5n1GLdLbu2esV ?type . }
+                OPTIONAL { 
+                    ?certification eco:issuedBy ?issuer .
+                    ?issuer eco:firstName ?issuerName .
+                }
+            }
+            ORDER BY ?awardedToName
+            """
+        elif 'types' in question_lower and ('certification' in question_lower or 'certificat' in question_lower):
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT DISTINCT ?type (COUNT(?certification) as ?count)
+            WHERE {
+                ?certification a eco:Certification .
+                ?certification webprotege:RBPJvon09P5n1GLdLbu2esV ?type .
+            }
+            GROUP BY ?type
+            ORDER BY ?type
+            """
+        elif 'émet' in question_lower or 'émet' in question_lower or 'issuer' in question_lower:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            
+            SELECT DISTINCT ?issuerName ?issuerEmail (COUNT(?certification) as ?certCount)
+            WHERE {
+                ?certification a eco:Certification .
+                ?certification eco:issuedBy ?issuer .
+                ?issuer eco:firstName ?issuerName .
+                OPTIONAL { ?issuer eco:email ?issuerEmail . }
+            }
+            GROUP BY ?issuerName ?issuerEmail
+            ORDER BY ?issuerName
             """
         elif 'leadership' in question_lower or 'leader' in question_lower:
             return """
