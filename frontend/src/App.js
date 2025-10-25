@@ -20,11 +20,10 @@ function App() {
         <Navbar />
         <div className="container">
           <Routes>
-            <Route path="/" element={<Campaigns />} />
+            <Route path="/" element={<SemanticSearch />} />
             <Route path="/campaigns" element={<Campaigns />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/users" element={<Users />} />
-            <Route path="/search" element={<SemanticSearch />} />
             <Route path="/events" element={<Events />} />
             <Route path="/locations" element={<Locations />} />
             <Route path="/reservations" element={<Reservations />} />
