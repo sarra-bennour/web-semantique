@@ -11,7 +11,7 @@ def get_reservations():
         PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
         PREFIX webprotege: <http://webprotege.stanford.edu/>
         
-        SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userEmail ?confirmedByName ?confirmedByEmail
+        SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userLastName ?userEmail ?confirmedByName ?confirmedByEmail
         WHERE {
             ?reservation a eco:Reservation .
             OPTIONAL { ?reservation webprotege:R7QgAmvOpBSpwRmRrDZL8VE ?seatNumber . }
@@ -23,6 +23,7 @@ def get_reservations():
             OPTIONAL { 
                 ?reservation eco:belongsToUser ?user .
                 ?user eco:firstName ?userName .
+                OPTIONAL { ?user eco:lastName ?userLastName . }
                 OPTIONAL { ?user eco:email ?userEmail . }
             }
             OPTIONAL { 
@@ -48,7 +49,7 @@ def get_reservations_by_status(status):
         PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
         PREFIX webprotege: <http://webprotege.stanford.edu/>
         
-        SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userEmail
+        SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userLastName ?userEmail
         WHERE {{
             ?reservation a eco:Reservation .
             ?reservation webprotege:R9wdyKGFoajnFCFN4oqnwHr ?status .
@@ -61,6 +62,7 @@ def get_reservations_by_status(status):
             OPTIONAL {{ 
                 ?reservation eco:belongsToUser ?user .
                 ?user eco:firstName ?userName .
+                OPTIONAL {{ ?user eco:lastName ?userLastName . }}
                 OPTIONAL {{ ?user eco:email ?userEmail . }}
             }}
         }}
@@ -81,7 +83,7 @@ def get_reservations_by_event(event_name):
         PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
         PREFIX webprotege: <http://webprotege.stanford.edu/>
         
-        SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userEmail
+        SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userLastName ?userEmail
         WHERE {{
             ?reservation a eco:Reservation .
             ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
@@ -92,6 +94,7 @@ def get_reservations_by_event(event_name):
             OPTIONAL {{ 
                 ?reservation eco:belongsToUser ?user .
                 ?user eco:firstName ?userName .
+                OPTIONAL {{ ?user eco:lastName ?userLastName . }}
                 OPTIONAL {{ ?user eco:email ?userEmail . }}
             }}
         }}
@@ -112,7 +115,7 @@ def get_reservations_by_user(user_name):
         PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
         PREFIX webprotege: <http://webprotege.stanford.edu/>
         
-        SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userEmail
+        SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userLastName ?userEmail
         WHERE {{
             ?reservation a eco:Reservation .
             ?reservation eco:belongsToUser ?user .
