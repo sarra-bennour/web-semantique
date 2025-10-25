@@ -89,6 +89,104 @@ def test_connection():
             "status": "error",
             "message": f"Erreur Fuseki: {str(e)}"
         }), 500
+
+
+@app.route('/api/ontology-stats', methods=['GET'])
+def get_ontology_stats():
+    """Récupère les statistiques de l'ontologie pour affichage dans la navbar"""
+    try:
+        if not sparql_utils:
+            return jsonify({
+                "status": "error",
+                "message": "SPARQL utils non initialisé"
+            }), 500
+        
+        # Requête pour compter toutes les classes principales
+        stats_query = """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX owl: <http://www.w3.org/2002/07/owl#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT 
+            (COUNT(DISTINCT ?class) as ?total_classes)
+            (COUNT(DISTINCT ?property) as ?total_properties)
+            (COUNT(DISTINCT ?individual) as ?total_individuals)
+        WHERE {
+            {
+                ?class a owl:Class .
+                FILTER(STRSTARTS(STR(?class), "http://www.semanticweb.org/eco-ontology#"))
+            } UNION {
+                ?property a owl:ObjectProperty .
+                FILTER(STRSTARTS(STR(?property), "http://www.semanticweb.org/eco-ontology#"))
+            } UNION {
+                ?property a owl:DatatypeProperty .
+                FILTER(STRSTARTS(STR(?property), "http://www.semanticweb.org/eco-ontology#"))
+            } UNION {
+                ?individual a ?class .
+                FILTER(STRSTARTS(STR(?class), "http://www.semanticweb.org/eco-ontology#"))
+            }
+        }
+        """
+        
+        results = sparql_utils.execute_query(stats_query)
+        
+        # Requête pour compter les instances par type
+        instances_query = """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        
+        SELECT 
+            (COUNT(DISTINCT ?event) as ?events)
+            (COUNT(DISTINCT ?location) as ?locations)
+            (COUNT(DISTINCT ?user) as ?users)
+            (COUNT(DISTINCT ?campaign) as ?campaigns)
+            (COUNT(DISTINCT ?resource) as ?resources)
+            (COUNT(DISTINCT ?sponsor) as ?sponsors)
+            (COUNT(DISTINCT ?donation) as ?donations)
+            (COUNT(DISTINCT ?blog) as ?blogs)
+        WHERE {
+            OPTIONAL { ?event a eco:Event }
+            OPTIONAL { ?location a eco:Location }
+            OPTIONAL { ?user a eco:User }
+            OPTIONAL { ?campaign a eco:Campaign }
+            OPTIONAL { ?resource a eco:Resource }
+            OPTIONAL { ?sponsor a eco:Sponsor }
+            OPTIONAL { ?donation a eco:Donation }
+            OPTIONAL { ?blog a eco:Blog }
+        }
+        """
+        
+        instances_results = sparql_utils.execute_query(instances_query)
+        
+        # Requête pour obtenir les informations de l'ontologie
+        ontology_info_query = """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX terms: <http://purl.org/dc/terms/>
+        
+        SELECT ?title ?description ?version ?creator ?created
+        WHERE {
+            ?ontology a owl:Ontology .
+            OPTIONAL { ?ontology terms:title ?title }
+            OPTIONAL { ?ontology terms:description ?description }
+            OPTIONAL { ?ontology owl:versionInfo ?version }
+            OPTIONAL { ?ontology terms:creator ?creator }
+            OPTIONAL { ?ontology terms:created ?created }
+        }
+        """
+        
+        ontology_info = sparql_utils.execute_query(ontology_info_query)
+        
+        return jsonify({
+            "status": "success",
+            "ontology_info": ontology_info[0] if ontology_info else {},
+            "statistics": results[0] if results else {},
+            "instances": instances_results[0] if instances_results else {}
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Erreur lors de la récupération des statistiques: {str(e)}"
+        }), 500
     
 
 
