@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { eventsAPI, locationsAPI } from '../../utils/api'; // Import locationsAPI
+import { eventsAPI, locationsAPI } from '../../utils/api'; 
 import './style.css';
 
 const Events = () => {
@@ -89,7 +89,7 @@ const Events = () => {
 
   return (
     <div className="events-section">
-      <h2>Événements Écologiques</h2>
+      <h1>Événements Écologiques</h1>
       
       {/* Formulaire de recherche */}
       <form onSubmit={handleSearch} className="search-filters">

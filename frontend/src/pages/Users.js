@@ -5,7 +5,6 @@ import './Users.css';
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState('all');
 
   useEffect(() => {
     fetchUsers();
@@ -22,42 +21,8 @@ const Users = () => {
     }
   };
 
-  const fetchOrganizers = async () => {
-    try {
-      const response = await usersAPI.getOrganizers();
-      setUsers(response.data);
-    } catch (error) {
-      console.error('Erreur chargement organisateurs:', error);
-    }
-  };
 
-  const fetchUsersByRole = async (role) => {
-    try {
-      const response = await usersAPI.getByRole(role);
-      setUsers(response.data);
-    } catch (error) {
-      console.error(`Erreur chargement ${role}s:`, error);
-    }
-  };
 
-  const handleFilterChange = (filter) => {
-    setActiveFilter(filter);
-    setLoading(true);
-
-    switch (filter) {
-      case 'all':
-        fetchUsers();
-        break;
-      case 'organizers':
-        fetchOrganizers();
-        break;
-      case 'volunteers':
-        fetchUsersByRole('volunteer');
-        break;
-      default:
-        fetchUsers();
-    }
-  };
 
   if (loading) return <div className="loading">Chargement des utilisateurs...</div>;
 
@@ -65,27 +30,7 @@ return (
   <div className="users-page">
     <h1>Utilisateurs</h1>
     
-    {/* Filtres */}
-    <div className="users-filters">
-      <button 
-        className={`filter-button ${activeFilter === 'all' ? 'active' : ''}`}
-        onClick={() => handleFilterChange('all')}
-      >
-        Tous les utilisateurs
-      </button>
-      <button 
-        className={`filter-button ${activeFilter === 'organizers' ? 'active' : ''}`}
-        onClick={() => handleFilterChange('organizers')}
-      >
-        Organisateurs
-      </button>
-      <button 
-        className={`filter-button ${activeFilter === 'volunteers' ? 'active' : ''}`}
-        onClick={() => handleFilterChange('volunteers')}
-      >
-        Volontaires
-      </button>
-    </div>
+
 
     {/* Tableau des utilisateurs */}
     <table className="users-table">
