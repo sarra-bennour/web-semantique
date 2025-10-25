@@ -2209,7 +2209,7 @@
         <lastName>Smith</lastName>
         <phone>+1-555-0103</phone>
         <registrationDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-01-20T14:15:00</registrationDate>
-        <role>User</role>
+        <role>Organizer</role>
     </owl:NamedIndividual>
     
 
@@ -2223,7 +2223,7 @@
         <lastName>Doe</lastName>
         <phone>+1-555-0100</phone>
         <registrationDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-01-15T10:30:00</registrationDate>
-        <role>User</role>
+        <role>Organizer</role>
     </owl:NamedIndividual>
     
 
@@ -2720,7 +2720,7 @@
     <isPartOfCampaign rdf:resource="http://www.semanticweb.org/eco-ontology#ClimateAwareness2024"/>
     <eventTitle>Green Innovation Challenge</eventTitle>
     <eventDescription>Competition for sustainable technology solutions and environmental startups</eventDescription>
-    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-09-20T09:00:00</eventDate>
+    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2026-09-20T09:00:00</eventDate>
     <maxParticipants rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">200</maxParticipants>
     <eventStatus>Planning</eventStatus>
     <eventImages>https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500,https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=500</eventImages>
@@ -2735,7 +2735,7 @@
     <isPartOfCampaign rdf:resource="http://www.semanticweb.org/eco-ontology#energy_saving_campaign"/>
     <eventTitle>Sustainable Agriculture Workshop</eventTitle>
     <eventDescription>Hands-on workshop on organic farming techniques and sustainable food production</eventDescription>
-    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-04-10T10:00:00</eventDate>
+    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2026-04-10T10:00:00</eventDate>
     <maxParticipants rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">40</maxParticipants>
     <eventStatus>Scheduled</eventStatus>
     <eventImages>https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=500,https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=500</eventImages>
@@ -2750,7 +2750,7 @@
     <isPartOfCampaign rdf:resource="http://www.semanticweb.org/eco-ontology#ClimateAwareness2024"/>
     <eventTitle>Renewable Energy Seminar</eventTitle>
     <eventDescription>Expert talks on solar, wind, and hydro power solutions for sustainable energy</eventDescription>
-    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-05-22T14:00:00</eventDate>
+    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2025-10-29T14:00:00</eventDate>
     <maxParticipants rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">150</maxParticipants>
     <eventStatus>Confirmed</eventStatus>
     <eventImages>https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=500</eventImages>
@@ -2765,7 +2765,7 @@
     <isPartOfCampaign rdf:resource="http://www.semanticweb.org/eco-ontology#BeachCleanup2024"/>
     <eventTitle>Eco Music Festival</eventTitle>
     <eventDescription>Music festival with environmental awareness theme featuring local artists</eventDescription>
-    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-07-12T16:00:00</eventDate>
+    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2025-10-12T16:00:00</eventDate>
     <maxParticipants rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2000</maxParticipants>
     <eventStatus>Scheduled</eventStatus>
     <eventImages>https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=500,https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=500,https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=500</eventImages>
@@ -2780,7 +2780,7 @@
     <isPartOfCampaign rdf:resource="http://www.semanticweb.org/eco-ontology#ClimateAwareness2024"/>
     <eventTitle>Green Film Screening</eventTitle>
     <eventDescription>Screening of environmental documentaries followed by panel discussion</eventDescription>
-    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-03-25T19:00:00</eventDate>
+    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2026-03-25T19:00:00</eventDate>
     <maxParticipants rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">300</maxParticipants>
     <eventStatus>Scheduled</eventStatus>
     <eventImages>https://images.unsplash.com/photo-1489599809505-fb452c5e0f70?w=500,https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=500</eventImages>    <duration rdf:datatype="http://www.w3.org/2001/XMLSchema#duration">PT3H</duration>
@@ -2794,7 +2794,7 @@
     <isPartOfCampaign rdf:resource="http://www.semanticweb.org/eco-ontology#energy_saving_campaign"/>
     <eventTitle>Eco Networking Mixer</eventTitle>
     <eventDescription>Virtual networking event for environmental professionals and enthusiasts</eventDescription>
-    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-04-18T18:00:00</eventDate>
+    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2025-04-18T18:00:00</eventDate>
     <maxParticipants rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">100</maxParticipants>
     <eventStatus>Confirmed</eventStatus>
     <eventImages>https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=500</eventImages>
@@ -2809,7 +2809,7 @@
     <isPartOfCampaign rdf:resource="http://www.semanticweb.org/eco-ontology#tree_planting_day"/>
     <eventTitle>Community Garden Party</eventTitle>
     <eventDescription>Social gathering in the community garden with local food and music</eventDescription>
-    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-06-08T15:00:00</eventDate>
+    <eventDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2026-06-08T15:00:00</eventDate>
     <maxParticipants rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">80</maxParticipants>
     <eventStatus>Scheduled</eventStatus>
     <eventImages>https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=500,https://images.unsplash.com/photo-1464207687429-7505649dae38?w=500</eventImages>

@@ -8,13 +8,34 @@ const SemanticSearch = () => {
   const [loading, setLoading] = useState(false);
 
   const suggestedQuestions = [
-    "Quels sont les événements disponibles ?",
+
+    // Événements - Questions générales
+    "Tous les événements",
+    "Événements à venir",
+    "Événements passés",
+    
+
+    
+    // Événements - Par type
+    "Événements éducatifs",
+    "Événements compétitifs",
+    "Événements de divertissement",
+    "Événements de socialisation",
+    
+    // Localisation
     "Où se déroulent les événements ?",
-    "Qui organise les événements ?",
-    "Quelles locations sont disponibles ?",
-    "Montre-moi les organisateurs d'événements",
-    "Quels sont les volontaires ?",
     "Quels événements ont lieu à Paris ?",
+    "Événements ont lieu à New York ",
+    "Locations disponibles",
+    "Locations à Boston",
+    
+    // Organisation
+    "Qui organise les événements ?",
+    "Montre-moi les organisateurs d'événements",
+
+
+
+    "Quels sont les volontaires ?",
     "Quelles sont les campagnes actives ?",
     "Quelles ressources sont disponibles ?",
     "Quelles réservations sont confirmées ?",
@@ -153,20 +174,26 @@ const SemanticSearch = () => {
           placeholder="Posez votre question en français... Ex: Quels sont les événements à Paris ?"
           className="search-input"
         />
-        <button type="submit" disabled={loading} className="search-button">
-          {loading ? 'Recherche...' : 'Rechercher'}
-        </button>
+     <button 
+  type="submit" 
+  disabled={loading} 
+  className="search-button" 
+  style={{ color: 'white', backgroundColor: '#2f7c38ff' }}
+>
+  {loading ? 'Recherche...' : 'Rechercher'}
+</button>
       </form>
 
       {/* Suggested Questions Section */}
       <div className="suggestions">
         <h4>Questions suggérées:</h4>
-        <div className="suggestion-buttons">
+        <div className="suggestion-buttons" >
           {suggestedQuestions.map((suggestion, index) => (
             <button
               key={index}
               type="button"
-              className="suggestion-button"
+              className="suggestion-button "
+              
               onClick={() => handleSuggestionClick(suggestion)}
             >
               {suggestion}
