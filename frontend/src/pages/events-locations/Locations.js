@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { locationsAPI } from '../../utils/api';
-import './style.css';
+import './event.css'
 
 const Locations = () => {
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+      total: 0,
+      dispo: 0,
+      reserved: 0,
+      inrepair: 0
+    });
+
+
+
+    
  
 
   useEffect(() => {
@@ -15,6 +25,7 @@ const Locations = () => {
     try {
       const response = await locationsAPI.getAll();
       setLocations(response.data);
+      calculateStats(response.data);
     } catch (error) {
       console.error('Erreur chargement locations:', error);
     } finally {
@@ -22,12 +33,59 @@ const Locations = () => {
     }
   };
 
+const calculateStats = (locationData) => {
+  const total = locationData.length;
+  const dispo = locationData.filter(location => 
+    location.reserved === 'false' && location.inRepair === 'false'
+  ).length;
+  const reserved = locationData.filter(location => 
+    location.reserved === 'true'
+  ).length;
+  const inrepair = locationData.filter(location => 
+    location.inRepair === 'true'
+  ).length;
+
+  setStats({
+    total,
+    dispo,
+    reserved,
+    inrepair
+  });
+};
+
 
   if (loading) return <div className="loading">Chargement des locations...</div>;
 
   return (
-    <div className="locations-section">
+    <div className="resources-page">
       <h1>Lieux d'Événements</h1>
+
+
+<div className="stats-cards">
+  <div className="stat-card total">
+    <h3>Total lieux</h3>
+    <div className="stat-number">{stats.total}</div>
+    <p>Tous les lieux</p>
+  </div>
+  
+  <div className="stat-card total">
+    <h3>Réservés</h3>
+    <div className="stat-number">{stats.reserved}</div>
+    <p>Lieux réservés</p>
+  </div>
+  
+  <div className="stat-card total">
+    <h3>En Réparation</h3>
+    <div className="stat-number">{stats.inrepair}</div>
+    <p>Lieux en réparation</p>
+  </div>
+  
+  <div className="stat-card total">
+    <h3>Disponibles</h3>
+    <div className="stat-number">{stats.dispo}</div>
+    <p>Lieux disponibles</p>
+  </div>
+</div>
             
 
       {/* Liste des locations */}

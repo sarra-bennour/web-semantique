@@ -20,6 +20,8 @@ api.interceptors.response.use(
 
 export const searchAPI = {
   semanticSearch: (question) => api.post('/search', { question }),
+  aiSearch: (question) => api.post('/search/ai', { question }),
+  hybridSearch: (question) => api.post('/search/hybrid', { question }),
 };
 
 export const eventsAPI = {

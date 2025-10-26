@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { eventsAPI, locationsAPI } from '../../utils/api'; 
-import '../events-locations/style.css';
 
 const Events = () => {
   const [events, setEvents] = useState([]);
-  const [locations, setLocations] = useState([]); // State for locations
+  const [filteredEvents, setFilteredEvents] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [locationsLoading, setLocationsLoading] = useState(true);
   const [searchFilters, setSearchFilters] = useState({
@@ -12,11 +12,22 @@ const Events = () => {
     location: '',
     date: ''
   });
+  const [stats, setStats] = useState({
+    total: 0,
+    scheduled: 0,
+    planning: 0,
+    confirmed: 0
+  });
 
   useEffect(() => {
     fetchEvents();
     fetchLocations();
   }, []);
+
+  useEffect(() => {
+    // Filter events whenever searchFilters change
+    filterEvents();
+  }, [searchFilters, events]);
 
   const fetchEvents = async () => {
     try {
@@ -24,6 +35,8 @@ const Events = () => {
       console.log('API Response:', response);
       console.log('Events data:', response.data);
       setEvents(response.data);
+      setFilteredEvents(response.data); // Initialize filtered events
+      calculateStats(response.data);
     } catch (error) {
       console.error('Erreur chargement événements:', error);
     } finally {
@@ -33,7 +46,7 @@ const Events = () => {
 
   const fetchLocations = async () => {
     try {
-      const response = await locationsAPI.getAll(); // Assuming you have this endpoint
+      const response = await locationsAPI.getAll();
       console.log('Locations data:', response.data);
       setLocations(response.data);
     } catch (error) {
@@ -43,17 +56,54 @@ const Events = () => {
     }
   };
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const response = await eventsAPI.search(searchFilters);
-      setEvents(response.data);
-    } catch (error) {
-      console.error('Erreur recherche événements:', error);
-    } finally {
-      setLoading(false);
+  const filterEvents = () => {
+    let filtered = events;
+
+    // Filter by title
+    if (searchFilters.title) {
+      filtered = filtered.filter(event => 
+        event.title.toLowerCase().includes(searchFilters.title.toLowerCase())
+      );
     }
+
+    // Filter by location
+    if (searchFilters.location) {
+      filtered = filtered.filter(event => 
+        (event.locationName || '').toLowerCase().includes(searchFilters.location.toLowerCase())
+      );
+    }
+
+    // Filter by date
+    if (searchFilters.date) {
+      filtered = filtered.filter(event => {
+        const eventDate = new Date(event.date).toISOString().split('T')[0];
+        const filterDate = searchFilters.date;
+        return eventDate === filterDate;
+      });
+    }
+
+    setFilteredEvents(filtered);
+    calculateStats(filtered); // Update stats based on filtered results
+  };
+
+  const calculateStats = (eventsData) => {
+    const total = eventsData.length;
+    const scheduled = eventsData.filter(event => 
+      event.status && event.status.toLowerCase().includes('scheduled')
+    ).length;
+    const planning = eventsData.filter(event => 
+      event.status && event.status.toLowerCase().includes('planning')
+    ).length;
+    const confirmed = eventsData.filter(event => 
+      event.status && event.status.toLowerCase().includes('confirmed')
+    ).length;
+
+    setStats({
+      total,
+      scheduled,
+      planning,
+      confirmed
+    });
   };
 
   const handleFilterChange = (field, value) => {
@@ -65,7 +115,6 @@ const Events = () => {
 
   const clearFilters = () => {
     setSearchFilters({ title: '', location: '', date: '' });
-    fetchEvents();
   };
 
   const getImageArray = (imagesString) => {
@@ -88,25 +137,57 @@ const Events = () => {
   if (loading) return <div className="loading">Chargement des événements...</div>;
 
   return (
-    <div className="events-section">
+    <div className="resources-page">
       <h1>Événements Écologiques</h1>
       
-      {/* Formulaire de recherche */}
-      <form onSubmit={handleSearch} className="search-filters">
-        <div className="filter-group">
+      {/* Statistics Cards */}
+      <div className="stats-cards">
+        <div className="stat-card total">
+          <h3>Total Événements</h3>
+          <div className="stat-number">{stats.total}</div>
+          <p>Tous les événements</p>
+        </div>
+        
+        <div className="stat-card total">
+          <h3>Programmés</h3>
+          <div className="stat-number">{stats.scheduled}</div>
+          <p>Événements programmés</p>
+        </div>
+        
+        <div className="stat-card total">
+          <h3>En Planification</h3>
+          <div className="stat-number">{stats.planning}</div>
+          <p>En cours de planification</p>
+        </div>
+        
+        <div className="stat-card total">
+          <h3>Confirmés</h3>
+          <div className="stat-number">{stats.confirmed}</div>
+          <p>Événements confirmés</p>
+        </div>
+      </div>
+      
+      {/* Formulaire de recherche avec filtrage automatique */}
+      <div className="filters-section" style={{
+        display: 'flex',
+        gap: '1rem',
+        alignItems: 'end',
+        flexWrap: 'nowrap'
+      }}>
+        <div className="filter-group" style={{flex: 1, marginBottom: 0}}>
           <input
             type="text"
             placeholder="Rechercher par titre..."
             value={searchFilters.title}
             onChange={(e) => handleFilterChange('title', e.target.value)}
-            className="filter-input"
+            style={{width: '100%', height: '40px'}}
           />
-          
-          {/* Dropdown for locations */}
+        </div>
+        <div className="filter-group" style={{flex: 1, marginBottom: 0}}>
           <select
             value={searchFilters.location}
             onChange={(e) => handleFilterChange('location', e.target.value)}
-            className="filter-input"
+            style={{width: '100%', height: '40px'}}
           >
             <option value="">Tous les lieux</option>
             {locations.map((location, index) => (
@@ -115,27 +196,41 @@ const Events = () => {
               </option>
             ))}
           </select>
-          
+        </div>
+        <div className="filter-group" style={{flex: 1, marginBottom: 0}}>
           <input
             type="date"
-            placeholder="Date..."
             value={searchFilters.date}
             onChange={(e) => handleFilterChange('date', e.target.value)}
-            className="filter-input"
+            style={{width: '100%', height: '40px'}}
           />
         </div>
-        <div className="filter-buttons">
-          <button type="submit" className="filter-button">Rechercher</button>
+
+        <div className="filter-buttons" style={{flexShrink: 0, marginBottom: 0}}>
           <button type="button" onClick={clearFilters} className="filter-button clear">
             Effacer
           </button>
         </div>
-      </form>
+      </div>
+
+      {/* Nombre de résultats */}
+      <div className="results-count" style={{ 
+        margin: '1rem 0', 
+        fontSize: '1rem', 
+        color: '#495057',
+        fontWeight: '600'
+      }}>
+        {filteredEvents.length} événement{filteredEvents.length !== 1 ? 's' : ''} trouvé{filteredEvents.length !== 1 ? 's' : ''}
+        {(searchFilters.title || searchFilters.location || searchFilters.date) && (
+          <span style={{ fontSize: '0.9rem', color: '#6c757d', marginLeft: '0.5rem' }}>
+          </span>
+        )}
+      </div>
 
       {/* Liste des événements */}
       <div className="events-grid">
-        {events.length > 0 ? (
-          events.map((event, index) => {
+        {filteredEvents.length > 0 ? (
+          filteredEvents.map((event, index) => {
             const eventImages = getImageArray(event.images);
             console.log(`Event ${index} images:`, eventImages);
             
@@ -176,7 +271,14 @@ const Events = () => {
             );
           })
         ) : (
-          <p>Aucun événement trouvé</p>
+          <div style={{ 
+            gridColumn: '1 / -1', 
+            textAlign: 'center', 
+            padding: '3rem',
+            color: '#6c757d'
+          }}>
+            {events.length === 0 ? 'Aucun événement disponible' : 'Aucun événement ne correspond aux critères de recherche.'}
+          </div>
         )}
       </div>
     </div>
