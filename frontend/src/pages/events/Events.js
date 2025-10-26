@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { eventsAPI, locationsAPI } from '../../utils/api'; 
-import './style.css';
+import '../events-locations/style.css';
 
 const Events = () => {
   const [events, setEvents] = useState([]);

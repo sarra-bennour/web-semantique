@@ -96,6 +96,11 @@ const SemanticSearch = () => {
 
   // Fonction pour afficher les résultats de comptage
   const renderCountResults = (resultsData) => {
+    // Vérifier que resultsData est un tableau
+    if (!Array.isArray(resultsData) || resultsData.length === 0) {
+      return null;
+    }
+
     // Résultat de comptage total campagnes
     if (resultsData.length === 1 && resultsData[0].hasOwnProperty('totalCampaigns')) {
       return (
@@ -160,7 +165,7 @@ const SemanticSearch = () => {
     const resultsData = hasBindings ? results.results.results.bindings : 
                          hasArrayResults ? results.results :
                          hasDirectResults ? results.results : 
-                         results.results || [];
+                         Array.isArray(results.results) ? results.results : [];
 
     const questionText = results.question || results.original_question;
     const sparqlQuery = results.sparql_query || results.generated_sparql;
@@ -194,7 +199,7 @@ const SemanticSearch = () => {
           </div>
         )}
         
-        {hasBindings && resultsData.length > 0 ? (
+        {hasBindings && Array.isArray(resultsData) && resultsData.length > 0 ? (
           <div className="results-table-container">
             <table className="results-table">
               <thead>
@@ -222,7 +227,7 @@ const SemanticSearch = () => {
               </tbody>
             </table>
           </div>
-        ) : hasArrayResults && resultsData.length > 0 ? (
+        ) : hasArrayResults && Array.isArray(resultsData) && resultsData.length > 0 ? (
           <div className="results-table-container">
             <table className="results-table">
               <thead>
@@ -348,6 +353,22 @@ const SemanticSearch = () => {
           <h5>👥 Volontaires</h5>
           <div className="suggestion-buttons">
             {categorizedSuggestions.Volontaires.map((suggestion, index) => (
+              <button
+                key={index}
+                type="button"
+                className="suggestion-button"
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="suggestion-category">
+          <h5>📋 Assignements</h5>
+          <div className="suggestion-buttons">
+            {categorizedSuggestions.assignements.map((suggestion, index) => (
               <button
                 key={index}
                 type="button"

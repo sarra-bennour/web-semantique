@@ -9,7 +9,7 @@ search_bp = Blueprint('search', __name__)
 def semantic_search():
     """Recherche sémantique - transformation question en SPARQL"""
     try:
-        data = request.json
+        data = request.get_json(force=True)
         question = data.get('question', '').lower()
         
         # Transformation des questions en requêtes SPARQL
@@ -907,8 +907,8 @@ def transform_question_to_sparql_combined(question):
             LIMIT 20
             """
     
-    # QUESTIONS SUR LES ORGANISATEURS ET VOLONTAIRES
-    elif any(word in question_lower for word in ['utilisateur', 'user', 'personne', 'organisateur', 'volontaire']):
+    # QUESTIONS SUR LES ORGANISATEURS ET UTILISATEURS (sans volontaires)
+    elif any(word in question_lower for word in ['utilisateur', 'user', 'personne', 'organisateur']) and not any(word in question_lower for word in ['volontaire', 'volunteer', 'bénévole', 'benevole']):
         if 'organisateur' in question_lower or 'organise' in question_lower:
             return """
             PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
@@ -920,20 +920,6 @@ def transform_question_to_sparql_combined(question):
                       eco:lastName ?lastName ;
                       eco:email ?email .
                 OPTIONAL { ?user eco:phone ?phone . }
-            }
-            ORDER BY ?lastName ?firstName
-            """
-        elif 'volontaire' in question_lower or 'bénévole' in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            SELECT ?user ?firstName ?lastName ?email ?role
-            WHERE {
-                ?user a eco:User ;
-                      eco:firstName ?firstName ;
-                      eco:lastName ?lastName ;
-                      eco:email ?email ;
-                      eco:role ?role .
-                FILTER(REGEX(?role, "volunteer", "i"))
             }
             ORDER BY ?lastName ?firstName
             """
@@ -959,14 +945,13 @@ def transform_question_to_sparql_combined(question):
             PREFIX webprotege: <http://webprotege.stanford.edu/>
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
             
-            SELECT ?volunteer ?label ?user ?phone ?skills ?activityLevel ?motivation ?experience
+            SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?motivation ?experience
             WHERE {
                 ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
                 ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel .
                 FILTER(REGEX(?activityLevel, "actif", "i"))
                 
                 OPTIONAL { ?volunteer rdfs:label ?label . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?user . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9PW79FzwQKWuQYdTdYlHzN> ?motivation . }
@@ -980,13 +965,13 @@ def transform_question_to_sparql_combined(question):
             PREFIX webprotege: <http://webprotege.stanford.edu/>
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
             
-            SELECT ?volunteer ?label ?user ?skills ?activityLevel ?experience
+            SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?experience
             WHERE {
                 ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
                 ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills .
                 
                 OPTIONAL { ?volunteer rdfs:label ?label . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?user . }
+                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience . }
             }
@@ -998,13 +983,13 @@ def transform_question_to_sparql_combined(question):
             PREFIX webprotege: <http://webprotege.stanford.edu/>
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
             
-            SELECT ?volunteer ?label ?user ?experience ?skills ?activityLevel
+            SELECT ?volunteer ?label ?phone ?experience ?skills ?activityLevel
             WHERE {
                 ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
                 ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience .
                 
                 OPTIONAL { ?volunteer rdfs:label ?label . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?user . }
+                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
             }
@@ -1016,13 +1001,12 @@ def transform_question_to_sparql_combined(question):
             PREFIX webprotege: <http://webprotege.stanford.edu/>
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
             
-            SELECT ?volunteer ?label ?user ?phone ?skills ?activityLevel
+            SELECT ?volunteer ?label ?phone ?skills ?activityLevel
             WHERE {
                 ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
                 ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone .
                 
                 OPTIONAL { ?volunteer rdfs:label ?label . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?user . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
             }
@@ -1035,18 +1019,16 @@ def transform_question_to_sparql_combined(question):
             PREFIX webprotege: <http://webprotege.stanford.edu/>
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
             
-            SELECT ?volunteer ?label ?user ?phone ?skills ?activityLevel ?motivation ?experience ?medicalConditions
+            SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?motivation ?experience
             WHERE {
                 ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
                 
                 OPTIONAL { ?volunteer rdfs:label ?label . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?user . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9PW79FzwQKWuQYdTdYlHzN> ?motivation . }
                 OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9F95BAS8WtbTv8ZGBaPe42> ?medicalConditions . }
             }
             ORDER BY ?label
             LIMIT 20

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { assignmentsAPI } from '../utils/api';
+import { assignmentsAPI } from '../../utils/api';
 import './Assignments.css';
 
 const Assignments = () => {

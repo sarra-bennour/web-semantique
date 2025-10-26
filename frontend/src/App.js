@@ -5,12 +5,12 @@ import Campaigns from './pages/campaigns-resources/Campaigns';
 import Resources from './pages/campaigns-resources/Resources';
 import Users from './pages/Users';
 import SemanticSearch from './pages/SemanticSearch';
-import Events from './pages/events-locations/Events';
+import Events from './pages/events/Events';
 import Locations from './pages/events-locations/Locations';
 import Reservations from './pages/reservations/Reservations';
 import Certifications from './pages/certifications/Certifications';
-import Volunteers from './pages/Volunteers';
-import Assignments from './pages/Assignments';
+import Volunteers from './pages/volunteers/Volunteers';
+import Assignments from './pages/assignments/Assignments';
 
 
 import './App.css';

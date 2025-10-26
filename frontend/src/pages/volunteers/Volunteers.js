@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { volunteersAPI } from '../utils/api';
+import { volunteersAPI } from '../../utils/api';
 import './Volunteers.css';
 
 const Volunteers = () => {
