@@ -8,6 +8,8 @@ from modules.users import users_bp
 from modules.search import search_bp
 from modules.reservations import reservations_bp
 from modules.certifications import certifications_bp
+from modules.volunteers import volunteers_bp
+from modules.assignments import assignments_bp
 from sparql_utils import sparql_utils
 
 app = Flask(__name__)
@@ -21,6 +23,8 @@ app.register_blueprint(users_bp, url_prefix='/api')
 app.register_blueprint(search_bp, url_prefix='/api')
 app.register_blueprint(reservations_bp, url_prefix='/api')
 app.register_blueprint(certifications_bp, url_prefix='/api')
+app.register_blueprint(volunteers_bp, url_prefix='/api')
+app.register_blueprint(assignments_bp, url_prefix='/api')
 
 
 @app.route('/')

@@ -35,7 +35,21 @@ const SemanticSearch = () => {
 
 
 
+    // Volontaires
     "Quels sont les volontaires ?",
+    "Quels volontaires sont actifs ?",
+    "Quelles sont les compétences des volontaires ?",
+    "Quels volontaires ont de l'expérience ?",
+    "Quels sont les contacts des volontaires ?",
+    
+    // Assignements
+    "Quels sont les assignements ?",
+    "Quels assignements sont approuvés ?",
+    "Quels assignements sont rejetés ?",
+    "Quelles sont les notes des assignements ?",
+    "Statistiques des assignements",
+    
+    // Autres
     "Quelles sont les campagnes actives ?",
     "Quelles ressources sont disponibles ?",
     "Quelles réservations sont confirmées ?",
