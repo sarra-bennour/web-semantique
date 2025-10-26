@@ -4,9 +4,9 @@ import json
 
 api_routes = Blueprint('api', __name__)
 
-# Configuration Fuseki - CORRIGEZ AVEC VOTRE NOM DE DATASET
-FUSEKI_ENDPOINT = "http://localhost:3030/eco-platform-releaf/sparql"
-sparql = SPARQLWrapper(FUSEKI_ENDPOINT)
+# Configuration Fuseki - CORRIGÉ pour utiliser le même endpoint que sparql_utils.py
+FUSEKI_ENDPOINT = "http://localhost:3030/eco-ontology"
+sparql = SPARQLWrapper(FUSEKI_ENDPOINT + "/query")
 sparql.setReturnFormat(JSON)
 
 @api_routes.route('/campaigns', methods=['GET'])
@@ -44,9 +44,13 @@ def get_campaigns():
     ORDER BY ?name
     """
     
-    sparql.setQuery(query)
-    results = sparql.query().convert()
-    return jsonify(results)
+    try:
+        sparql.setQuery(query)
+        results = sparql.query().convert()
+        return jsonify(results)
+    except Exception as e:
+        print(f"Erreur SPARQL: {str(e)}")
+        return jsonify({"error": f"Erreur SPARQL: {str(e)}"}), 500
 
 @api_routes.route('/campaigns/<campaign_name>', methods=['GET'])
 def get_campaign_details(campaign_name):
@@ -84,9 +88,13 @@ def get_campaign_details(campaign_name):
     }
     """ % campaign_name
     
-    sparql.setQuery(query)
-    results = sparql.query().convert()
-    return jsonify(results)
+    try:
+        sparql.setQuery(query)
+        results = sparql.query().convert()
+        return jsonify(results)
+    except Exception as e:
+        print(f"Erreur SPARQL: {str(e)}")
+        return jsonify({"error": f"Erreur SPARQL: {str(e)}"}), 500
 
 @api_routes.route('/campaigns/active', methods=['GET'])
 def get_active_campaigns():
@@ -120,9 +128,13 @@ def get_active_campaigns():
     ORDER BY ?name
     """
     
-    sparql.setQuery(query)
-    results = sparql.query().convert()
-    return jsonify(results)
+    try:
+        sparql.setQuery(query)
+        results = sparql.query().convert()
+        return jsonify(results)
+    except Exception as e:
+        print(f"Erreur SPARQL: {str(e)}")
+        return jsonify({"error": f"Erreur SPARQL: {str(e)}"}), 500
 
 @api_routes.route('/campaigns/type/<campaign_type>', methods=['GET'])
 def get_campaigns_by_type(campaign_type):
@@ -144,9 +156,13 @@ def get_campaigns_by_type(campaign_type):
     ORDER BY ?name
     """ % campaign_type
     
-    sparql.setQuery(query)
-    results = sparql.query().convert()
-    return jsonify(results)
+    try:
+        sparql.setQuery(query)
+        results = sparql.query().convert()
+        return jsonify(results)
+    except Exception as e:
+        print(f"Erreur SPARQL: {str(e)}")
+        return jsonify({"error": f"Erreur SPARQL: {str(e)}"}), 500
 
 @api_routes.route('/resources', methods=['GET'])
 def get_resources():
@@ -182,9 +198,13 @@ def get_resources():
     ORDER BY ?name
     """
     
-    sparql.setQuery(query)
-    results = sparql.query().convert()
-    return jsonify(results)
+    try:
+        sparql.setQuery(query)
+        results = sparql.query().convert()
+        return jsonify(results)
+    except Exception as e:
+        print(f"Erreur SPARQL: {str(e)}")
+        return jsonify({"error": f"Erreur SPARQL: {str(e)}"}), 500
 
 @api_routes.route('/resources/<resource_name>', methods=['GET'])
 def get_resource_details(resource_name):
@@ -221,9 +241,13 @@ def get_resource_details(resource_name):
     }
     """ % resource_name
     
-    sparql.setQuery(query)
-    results = sparql.query().convert()
-    return jsonify(results)
+    try:
+        sparql.setQuery(query)
+        results = sparql.query().convert()
+        return jsonify(results)
+    except Exception as e:
+        print(f"Erreur SPARQL: {str(e)}")
+        return jsonify({"error": f"Erreur SPARQL: {str(e)}"}), 500
 
 @api_routes.route('/resources/type/<resource_type>', methods=['GET'])
 def get_resources_by_type(resource_type):
@@ -244,9 +268,13 @@ def get_resources_by_type(resource_type):
     ORDER BY ?name
     """ % resource_type
     
-    sparql.setQuery(query)
-    results = sparql.query().convert()
-    return jsonify(results)
+    try:
+        sparql.setQuery(query)
+        results = sparql.query().convert()
+        return jsonify(results)
+    except Exception as e:
+        print(f"Erreur SPARQL: {str(e)}")
+        return jsonify({"error": f"Erreur SPARQL: {str(e)}"}), 500
 
 @api_routes.route('/campaigns/<campaign_name>/resources', methods=['GET'])
 def get_campaign_resources(campaign_name):
@@ -281,11 +309,15 @@ def get_campaign_resources(campaign_name):
     ORDER BY ?resourceName
     """ % campaign_name
     
-    sparql.setQuery(query)
-    results = sparql.query().convert()
-    return jsonify(results)
+    try:
+        sparql.setQuery(query)
+        results = sparql.query().convert()
+        return jsonify(results)
+    except Exception as e:
+        print(f"Erreur SPARQL: {str(e)}")
+        return jsonify({"error": f"Erreur SPARQL: {str(e)}"}), 500
 
-
+@api_routes.route('/search/semantic', methods=['POST'])
 def semantic_search():
     """Recherche sémantique avec transformation question -> SPARQL"""
     data = request.json
@@ -295,13 +327,16 @@ def semantic_search():
     sparql_query = transform_question_to_sparql(question)
     
     if sparql_query:
-        sparql.setQuery(sparql_query)
-        results = sparql.query().convert()
-        return jsonify({
-            "original_question": question,
-            "generated_sparql": sparql_query,
-            "results": results
-        })
+        try:
+            sparql.setQuery(sparql_query)
+            results = sparql.query().convert()
+            return jsonify({
+                "original_question": question,
+                "generated_sparql": sparql_query,
+                "results": results
+            })
+        except Exception as e:
+            return jsonify({"error": f"Erreur SPARQL: {str(e)}"}), 500
     else:
         return jsonify({"error": "Impossible de traiter la question"}), 400
 
@@ -311,7 +346,111 @@ def transform_question_to_sparql(question):
     
     # QUESTIONS SUR LES CAMPAGNES
     if any(word in question_lower for word in ["campagne", "campaign"]):
-        if any(word in question_lower for word in ["actif", "active", "en cours", "current"]):
+        # REQUÊTES DE COMPTAGE POUR CAMPAGNES
+        if "nombre" in question_lower or "combien" in question_lower or "count" in question_lower:
+            if "type" in question_lower or "catégorie" in question_lower:
+                return """
+                PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                
+                SELECT ?type (COUNT(DISTINCT ?campaign) as ?count)
+                WHERE {
+                    {
+                        ?campaign a eco:Campaign .
+                        BIND("Campagne Générale" as ?type)
+                    }
+                    UNION
+                    {
+                        ?subClass rdfs:subClassOf* eco:Campaign .
+                        ?campaign a ?subClass .
+                        ?campaign a ?type .
+                        FILTER(?type != eco:Campaign)
+                    }
+                }
+                GROUP BY ?type
+                ORDER BY DESC(?count)
+                """
+            else:
+                return """
+                PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                
+                SELECT (COUNT(DISTINCT ?campaign) as ?totalCampaigns)
+                WHERE {
+                    {
+                        ?campaign a eco:Campaign .
+                    }
+                    UNION
+                    {
+                        ?subClass rdfs:subClassOf* eco:Campaign .
+                        ?campaign a ?subClass .
+                    }
+                }
+                """
+        
+        # REQUÊTES DE TRI POUR CAMPAGNES
+        elif "trier" in question_lower or "sort" in question_lower or "ordre" in question_lower:
+            if "date" in question_lower and "début" in question_lower:
+                return """
+                PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                
+                SELECT ?name ?description ?status ?startDate ?endDate ?goal ?type
+                WHERE {
+                    {
+                        ?campaign a eco:Campaign .
+                    }
+                    UNION
+                    {
+                        ?subClass rdfs:subClassOf* eco:Campaign .
+                        ?campaign a ?subClass .
+                    }
+                    ?campaign eco:campaignName ?name .
+                    OPTIONAL { ?campaign eco:campaignDescription ?description }
+                    OPTIONAL { ?campaign eco:campaignStatus ?status }
+                    OPTIONAL { ?campaign eco:startDate ?startDate }
+                    OPTIONAL { ?campaign eco:endDate ?endDate }
+                    OPTIONAL { ?campaign eco:goal ?goal }
+                    OPTIONAL { 
+                        ?campaign a ?type .
+                        FILTER(?type != eco:Campaign)
+                    }
+                    FILTER(BOUND(?startDate))
+                }
+                ORDER BY DESC(?startDate)
+                LIMIT 10
+                """
+            else:
+                return """
+                PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                
+                SELECT ?name ?description ?status ?startDate ?endDate ?goal ?type
+                WHERE {
+                    {
+                        ?campaign a eco:Campaign .
+                    }
+                    UNION
+                    {
+                        ?subClass rdfs:subClassOf* eco:Campaign .
+                        ?campaign a ?subClass .
+                    }
+                    ?campaign eco:campaignName ?name .
+                    OPTIONAL { ?campaign eco:campaignDescription ?description }
+                    OPTIONAL { ?campaign eco:campaignStatus ?status }
+                    OPTIONAL { ?campaign eco:startDate ?startDate }
+                    OPTIONAL { ?campaign eco:endDate ?endDate }
+                    OPTIONAL { ?campaign eco:goal ?goal }
+                    OPTIONAL { 
+                        ?campaign a ?type .
+                        FILTER(?type != eco:Campaign)
+                    }
+                }
+                ORDER BY DESC(?name)
+                LIMIT 10
+                """
+        
+        elif any(word in question_lower for word in ["actif", "active", "en cours", "current"]):
             return """
             PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -445,7 +584,109 @@ def transform_question_to_sparql(question):
     
     # QUESTIONS SUR LES RESSOURCES
     elif any(word in question_lower for word in ["ressource", "resource"]):
-        if "humaine" in question_lower or "human" in question_lower:
+        # REQUÊTES DE COMPTAGE POUR RESSOURCES
+        if "nombre" in question_lower or "combien" in question_lower or "count" in question_lower:
+            if "catégorie" in question_lower or "category" in question_lower:
+                return """
+                PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                
+                SELECT ?category (COUNT(DISTINCT ?resource) as ?count)
+                WHERE {
+                    {
+                        ?resource a eco:Resource .
+                        OPTIONAL { ?resource eco:resourceCategory ?category }
+                    }
+                    UNION
+                    {
+                        ?subClass rdfs:subClassOf* eco:Resource .
+                        ?resource a ?subClass .
+                        OPTIONAL { ?resource eco:resourceCategory ?category }
+                    }
+                    FILTER(BOUND(?category))
+                }
+                GROUP BY ?category
+                ORDER BY DESC(?count)
+                """
+            else:
+                return """
+                PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                
+                SELECT (COUNT(DISTINCT ?resource) as ?totalResources)
+                WHERE {
+                    {
+                        ?resource a eco:Resource .
+                    }
+                    UNION
+                    {
+                        ?subClass rdfs:subClassOf* eco:Resource .
+                        ?resource a ?subClass .
+                    }
+                }
+                """
+        
+        # REQUÊTES DE TRI POUR RESSOURCES
+        elif "trier" in question_lower or "sort" in question_lower or "ordre" in question_lower:
+            if "coût" in question_lower or "cost" in question_lower:
+                return """
+                PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                
+                SELECT ?name ?description ?category ?quantity ?unitCost ?type
+                WHERE {
+                    {
+                        ?resource a eco:Resource .
+                    }
+                    UNION
+                    {
+                        ?subClass rdfs:subClassOf* eco:Resource .
+                        ?resource a ?subClass .
+                    }
+                    ?resource eco:resourceName ?name .
+                    OPTIONAL { ?resource eco:resourceDescription ?description }
+                    OPTIONAL { ?resource eco:resourceCategory ?category }
+                    OPTIONAL { ?resource eco:quantityAvailable ?quantity }
+                    OPTIONAL { ?resource eco:unitCost ?unitCost }
+                    OPTIONAL { 
+                        ?resource a ?type .
+                        FILTER(?type != eco:Resource)
+                    }
+                    FILTER(BOUND(?unitCost))
+                }
+                ORDER BY DESC(xsd:decimal(?unitCost))
+                LIMIT 10
+                """
+            else:
+                return """
+                PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                
+                SELECT ?name ?description ?category ?quantity ?unitCost ?type
+                WHERE {
+                    {
+                        ?resource a eco:Resource .
+                    }
+                    UNION
+                    {
+                        ?subClass rdfs:subClassOf* eco:Resource .
+                        ?resource a ?subClass .
+                    }
+                    ?resource eco:resourceName ?name .
+                    OPTIONAL { ?resource eco:resourceDescription ?description }
+                    OPTIONAL { ?resource eco:resourceCategory ?category }
+                    OPTIONAL { ?resource eco:quantityAvailable ?quantity }
+                    OPTIONAL { ?resource eco:unitCost ?unitCost }
+                    OPTIONAL { 
+                        ?resource a ?type .
+                        FILTER(?type != eco:Resource)
+                    }
+                }
+                ORDER BY DESC(?name)
+                LIMIT 10
+                """
+        
+        elif "humaine" in question_lower or "human" in question_lower:
             return """
             PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
             
@@ -462,11 +703,11 @@ def transform_question_to_sparql(question):
             ORDER BY ?name
             """
         
-        elif "matériel" in question_lower or "material" in question_lower:
+        elif "matérielle" in question_lower or "material" in question_lower:
             return """
             PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
             
-            SELECT ?name ?description ?category ?quantity ?unitCost ?materialType
+            SELECT ?name ?description ?category ?quantity ?unitCost ?condition
             WHERE {
                 ?resource a eco:MaterialResource .
                 ?resource eco:resourceName ?name .
@@ -474,7 +715,7 @@ def transform_question_to_sparql(question):
                 OPTIONAL { ?resource eco:resourceCategory ?category }
                 OPTIONAL { ?resource eco:quantityAvailable ?quantity }
                 OPTIONAL { ?resource eco:unitCost ?unitCost }
-                OPTIONAL { ?resource eco:materialType ?materialType }
+                OPTIONAL { ?resource eco:condition ?condition }
             }
             ORDER BY ?name
             """
@@ -483,15 +724,15 @@ def transform_question_to_sparql(question):
             return """
             PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
             
-            SELECT ?name ?description ?category ?quantity ?unitCost ?equipmentType
+            SELECT ?name ?description ?category ?quantity ?unitCost ?specifications
             WHERE {
-                ?resource a eco:EquipmentResource .
+                ?resource a eco:Equipment .
                 ?resource eco:resourceName ?name .
                 OPTIONAL { ?resource eco:resourceDescription ?description }
                 OPTIONAL { ?resource eco:resourceCategory ?category }
                 OPTIONAL { ?resource eco:quantityAvailable ?quantity }
                 OPTIONAL { ?resource eco:unitCost ?unitCost }
-                OPTIONAL { ?resource eco:equipmentType ?equipmentType }
+                OPTIONAL { ?resource eco:specifications ?specifications }
             }
             ORDER BY ?name
             """
@@ -517,7 +758,7 @@ def transform_question_to_sparql(question):
             return """
             PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
             
-            SELECT ?name ?description ?category ?quantity ?unitCost
+            SELECT ?name ?description ?category ?quantity ?unitCost ?format
             WHERE {
                 ?resource a eco:DigitalResource .
                 ?resource eco:resourceName ?name .
@@ -525,6 +766,7 @@ def transform_question_to_sparql(question):
                 OPTIONAL { ?resource eco:resourceCategory ?category }
                 OPTIONAL { ?resource eco:quantityAvailable ?quantity }
                 OPTIONAL { ?resource eco:unitCost ?unitCost }
+                OPTIONAL { ?resource eco:format ?format }
             }
             ORDER BY ?name
             """
@@ -558,53 +800,3 @@ def transform_question_to_sparql(question):
             ORDER BY ?name
             LIMIT 20
             """
-    
-    # QUESTIONS SUR LES UTILISATEURS
-    elif "utilisateur" in question_lower or "user" in question_lower:
-        return """
-        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-        
-        SELECT ?firstName ?lastName ?email ?role ?registrationDate
-        WHERE {
-            ?user a eco:User .
-            ?user eco:firstName ?firstName .
-            OPTIONAL { ?user eco:lastName ?lastName }
-            OPTIONAL { ?user eco:email ?email }
-            OPTIONAL { ?user eco:role ?role }
-            OPTIONAL { ?user eco:registrationDate ?registrationDate }
-        }
-        ORDER BY ?firstName
-        LIMIT 20
-        """
-    
-    # REQUÊTE PAR DÉFAUT AMÉLIORÉE
-    return """
-    PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    
-    SELECT ?name ?description ?type
-    WHERE {
-        {
-            ?item a eco:Campaign .
-            ?item eco:campaignName ?name .
-            OPTIONAL { ?item eco:campaignDescription ?description }
-            BIND("Campagne" as ?type)
-        }
-        UNION
-        {
-            ?item a eco:Resource .
-            ?item eco:resourceName ?name .
-            OPTIONAL { ?item eco:resourceDescription ?description }
-            BIND("Ressource" as ?type)
-        }
-        UNION
-        {
-            ?item a eco:User .
-            ?item eco:firstName ?name .
-            OPTIONAL { ?item eco:lastName ?description }
-            BIND("Utilisateur" as ?type)
-        }
-    }
-    ORDER BY ?type ?name
-    LIMIT 15
-    """
