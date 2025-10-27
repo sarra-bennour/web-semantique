@@ -66,4 +66,5 @@ export const blogsAPI = {
   search: (filters) => api.post('/blogs/search', filters),
 };
 
+
 export default api;

@@ -14,6 +14,7 @@ import Assignments from './pages/assignments/Assignments';
 import Blogs from './pages/blogs/Blogs';
 
 
+
 import './App.css';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
             <Route path="/volunteers" element={<Volunteers />} />
             <Route path="/assignments" element={<Assignments />} />
             <Route path="/blogs" element={<Blogs />} />
+
             <Route path="*" element={<h2>404 - Page Not Found</h2>} />
           </Routes>
         </div>

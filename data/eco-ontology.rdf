@@ -2213,6 +2213,7 @@
     
 
 
+
     <!-- http://www.semanticweb.org/eco-ontology#BronzeLevel -->
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#BronzeLevel">
@@ -3240,6 +3241,7 @@
         <category>Food</category>
         <publicationDate rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2025-10-12T12:00:00</publicationDate>
     </owl:NamedIndividual>
+
 
 </rdf:RDF>
 

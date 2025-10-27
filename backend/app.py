@@ -7,12 +7,14 @@ from modules.locations import locations_bp
 from modules.users import users_bp
 from modules.search import search_bp
 from modules.blogs import blogs_bp
+
 from modules.reservations import reservations_bp
 from modules.certifications import certifications_bp
 from modules.volunteers import volunteers_bp
 from modules.assignments import assignments_bp
 from sparql_utils import sparql_utils
 from modules.reviews import reviews_bp
+
 
 app = Flask(__name__)
 CORS(app)
@@ -30,6 +32,7 @@ app.register_blueprint(assignments_bp, url_prefix='/api')
 
 app.register_blueprint(blogs_bp, url_prefix='/api')
 app.register_blueprint(reviews_bp, url_prefix='/api')
+
 
 
 @app.route('/')
@@ -98,6 +101,8 @@ def test_connection():
         
     except Exception as e:
         app.logger.error(f"Erreur test Fuseki: {str(e)}")
+        logger.error(f"Erreur test Fuseki: {str(e)}")
+
         return jsonify({
             "status": "error",
             "message": f"Erreur Fuseki: {str(e)}"

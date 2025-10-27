@@ -1,4 +1,6 @@
 from SPARQLWrapper import SPARQLWrapper, JSON, POST
+
+from SPARQLWrapper import SPARQLWrapper, JSON
 import os
 from dotenv import load_dotenv
 
