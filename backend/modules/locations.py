@@ -118,3 +118,6 @@ def search_locations():
     
     results = sparql_utils.execute_query(query)
     return jsonify(results)
+
+
+

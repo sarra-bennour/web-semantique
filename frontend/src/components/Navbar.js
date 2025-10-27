@@ -6,8 +6,9 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="nav-container">
-        <h1 className="nav-logo">🌿 Eco Platform</h1>
-        <ul className="nav-menu">
+<a href="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+  <h1 className="nav-logo">🌿 Eco Platform</h1>
+</a>        <ul className="nav-menu">
           <li className="nav-item">
             <Link to="/campaigns" className="nav-link">Campagnes</Link>
           </li>
@@ -28,7 +29,7 @@ const Navbar = () => {
             <Link to="/certifications" className="nav-link">Certifications</Link>
           </li>
           <li className="nav-item">
-            <Link to="/users" className="nav-link">Utilisateurs</Link>
+            <Link to="/volunteers" className="nav-link">Volontaires</Link>
           </li>
           <li className="nav-item">
             <Link to="/sponsors" className="nav-link">Sponsors</Link>
@@ -37,7 +38,16 @@ const Navbar = () => {
             <Link to="/donations" className="nav-link">Donations</Link>
           </li>
           <li className="nav-item">
-            <Link to="/search" className="nav-link">Recherche Sémantique</Link>
+            <Link to="/" className="nav-link">Recherche Sémantique</Link>
+            <Link to="/assignments" className="nav-link">Assignements</Link>
+          </li>
+          
+          <li className="nav-item">
+            <Link to="*" className="nav-link">Blogs</Link>
+          </li>
+
+          <li className="nav-item">
+            <Link to="/users" className="nav-link">Utilisateurs</Link>
           </li>
         </ul>
       </div>

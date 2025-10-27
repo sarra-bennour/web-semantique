@@ -20,6 +20,8 @@ api.interceptors.response.use(
 
 export const searchAPI = {
   semanticSearch: (question) => api.post('/search', { question }),
+  aiSearch: (question) => api.post('/search/ai', { question }),
+  hybridSearch: (question) => api.post('/search/hybrid', { question }),
 };
 
 export const sponsorsAPI = {
@@ -51,6 +53,22 @@ export const usersAPI = {
   getById: (id) => api.get(`/users/${id}`),
   getOrganizers: () => api.get('/users/organizers'),
   getByRole: (role) => api.get(`/users/role/${role}`),
+};
+
+export const volunteersAPI = {
+  getAll: () => api.get('/volunteers'),
+  getById: (id) => api.get(`/volunteers/${id}`),
+  search: (filters) => api.post('/volunteers/search', filters),
+  getByActivityLevel: (level) => api.get(`/volunteers/by-activity-level/${level}`),
+};
+
+export const assignmentsAPI = {
+  getAll: () => api.get('/assignments'),
+  getById: (id) => api.get(`/assignments/${id}`),
+  getByStatus: (status) => api.get(`/assignments/by-status/${status}`),
+  getByRating: (minRating) => api.get(`/assignments/by-rating/${minRating}`),
+  search: (filters) => api.post('/assignments/search', filters),
+  getStatistics: () => api.get('/assignments/statistics'),
 };
 
 export default api;
