@@ -222,14 +222,16 @@ MAIN CLASSES AND THEIR PROPERTIES:
 - Outdoor (eco:Outdoor): locationName, address, city, country, capacity, price, reserved, inRepair, locationDescription, latitude, longitude, locationImages, locationType
 - VirtualPlatform (eco:VirtualPlatform): locationName, address, city, country, capacity, price, reserved, inRepair, locationDescription, latitude, longitude, locationImages, locationType
 - Campaign (eco:Campaign): campaignName, campaignDescription, campaignStatus, startDate, endDate, goal, targetAmount, fundsRaised
-- AwarenessCampaign (eco:AwarenessCampaign): campaignName, campaignDescription, campaignStatus, startDate, endDate, goal, targetAmount, fundsRaised
-- CleanupCampaign (eco:CleanupCampaign): campaignName, campaignDescription, campaignStatus, startDate, endDate, goal, targetAmount, fundsRaised
+- AwarenessCampaign (eco:AwarenessCampaign): campaignName, campaignDescription, campaignStatus, startDate, endDate, goal
+- CleanupCampaign (eco:CleanupCampaign): campaignName, campaignDescription, campaignStatus, startDate, endDate, goal
+- EventCampaign (eco:EventCampaign): campaignName, campaignDescription, campaignStatus, startDate, endDate, goal, targetParticipants
 - FundingCampaign (eco:FundingCampaign): campaignName, campaignDescription, campaignStatus, startDate, endDate, goal, targetAmount, fundsRaised
 - Resource (eco:Resource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, resourceType
 - DigitalResource (eco:DigitalResource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, resourceType
-- EquipmentResource (eco:EquipmentResource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, resourceType
-- HumanResource (eco:HumanResource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, resourceType
-- MaterialResource (eco:MaterialResource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, resourceType
+- EquipmentResource (eco:EquipmentResource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, equipmentType
+- FinancialResource (eco:FinancialResource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, currency
+- HumanResource (eco:HumanResource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, skillLevel
+- MaterialResource (eco:MaterialResource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, materialType
 - Volunteer (webprotege:RCXXzqv27uFuX5nYU81XUvw): phone (webprotege:R8BxRbqkCT2nIQCr5UoVlXD), healthIssues (webprotege:R9F95BAS8WtbTv8ZGBaPe42), motivation (webprotege:R9PW79FzwQKWuQYdTdYlHzN), experience (webprotege:R9tdW5crNU837y5TemwdNfR), skills (webprotege:RBqpxvMVBnwM1Wb6OhzTpHf)
 - Assignment (webprotege:Rj2A7xNWLfpNcbE4HJMKqN): startDate (webprotege:RD3Wor03BEPInfzUaMNVPC7), status (webprotege:RDT3XEARggTy1BIBKDXXrmx), rating (webprotege:RRatingAssignment)
 - Certification (eco:Certification): certificateCode, pointsEarned, certificationType, awardedTo, issuedBy
