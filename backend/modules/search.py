@@ -90,12 +90,456 @@ def extract_date_from_question(question_lower):
     
     return None
 
+def handle_volunteer_questions(question_lower):
+    """Gère intelligemment toutes les questions sur les volontaires"""
+    
+    # Patterns pour les niveaux d'activité
+    if any(word in question_lower for word in ['non actif', 'inactif', 'pas actif', 'peu actif']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?motivation ?experience ?medicalConditions
+        WHERE {
+            ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
+            ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel .
+            FILTER(REGEX(?activityLevel, "non actif|inactif|peu actif", "i"))
+            
+            OPTIONAL { ?volunteer rdfs:label ?label . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9PW79FzwQKWuQYdTdYlHzN> ?motivation . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9F95BAS8WtbTv8ZGBaPe42> ?medicalConditions . }
+        }
+        ORDER BY ?label
+        """
+    
+    elif any(word in question_lower for word in ['très actif', 'very active', 'très actifs']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?motivation ?experience ?medicalConditions
+        WHERE {
+            ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
+            ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel .
+            FILTER(REGEX(?activityLevel, "très actif", "i"))
+            
+            OPTIONAL { ?volunteer rdfs:label ?label . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9PW79FzwQKWuQYdTdYlHzN> ?motivation . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9F95BAS8WtbTv8ZGBaPe42> ?medicalConditions . }
+        }
+        ORDER BY ?label
+        """
+    
+    elif any(word in question_lower for word in ['actif', 'active', 'actifs']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?motivation ?experience ?medicalConditions
+        WHERE {
+            ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
+            ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel .
+            FILTER(REGEX(?activityLevel, "actif", "i"))
+            
+            OPTIONAL { ?volunteer rdfs:label ?label . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9PW79FzwQKWuQYdTdYlHzN> ?motivation . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9F95BAS8WtbTv8ZGBaPe42> ?medicalConditions . }
+        }
+        ORDER BY ?label
+        """
+    
+    # Patterns pour les compétences
+    elif any(word in question_lower for word in ['compétence', 'skill', 'compétences', 'skills', 'domaine', 'savoir']):
+        # Extraire le domaine de compétence si mentionné
+        skill_keywords = ['programmation', 'informatique', 'langue', 'communication', 'gestion', 'technique', 'médical', 'scientifique']
+        skill_filter = ""
+        for skill in skill_keywords:
+            if skill in question_lower:
+                skill_filter = f'FILTER(REGEX(?skills, "{skill}", "i"))'
+                break
+        
+        return f"""
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?experience ?motivation
+        WHERE {{
+            ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
+            ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills .
+            
+            OPTIONAL {{ ?volunteer rdfs:label ?label . }}
+            OPTIONAL {{ ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }}
+            OPTIONAL {{ ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }}
+            OPTIONAL {{ ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience . }}
+            OPTIONAL {{ ?volunteer <http://webprotege.stanford.edu/R9PW79FzwQKWuQYdTdYlHzN> ?motivation . }}
+            {skill_filter}
+        }}
+        ORDER BY ?skills
+        """
+    
+    # Patterns pour l'expérience
+    elif any(word in question_lower for word in ['expérience', 'experience', 'expérimenté', 'expérimentés', 'ancien', 'vétéran']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?volunteer ?label ?phone ?experience ?skills ?activityLevel ?motivation
+        WHERE {
+            ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
+            ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience .
+            
+            OPTIONAL { ?volunteer rdfs:label ?label . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9PW79FzwQKWuQYdTdYlHzN> ?motivation . }
+        }
+        ORDER BY ?label
+        """
+    
+    # Patterns pour les conditions médicales
+    elif any(word in question_lower for word in ['médical', 'medical', 'condition', 'handicap', 'restriction', 'santé']):
+        if any(word in question_lower for word in ['sans', 'pas de', 'aucune']):
+            return """
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            
+            SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?motivation ?experience
+            WHERE {
+                ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
+                FILTER NOT EXISTS { ?volunteer <http://webprotege.stanford.edu/R9F95BAS8WtbTv8ZGBaPe42> ?medicalConditions . }
+                
+                OPTIONAL { ?volunteer rdfs:label ?label . }
+                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
+                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
+                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
+                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9PW79FzwQKWuQYdTdYlHzN> ?motivation . }
+                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience . }
+            }
+            ORDER BY ?label
+            """
+        else:
+            return """
+            PREFIX webprotege: <http://webprotege.stanford.edu/>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            
+            SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?motivation ?experience ?medicalConditions
+            WHERE {
+                ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
+                ?volunteer <http://webprotege.stanford.edu/R9F95BAS8WtbTv8ZGBaPe42> ?medicalConditions .
+                
+                OPTIONAL { ?volunteer rdfs:label ?label . }
+                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
+                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
+                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
+                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9PW79FzwQKWuQYdTdYlHzN> ?motivation . }
+                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience . }
+            }
+            ORDER BY ?label
+            """
+    
+    # Patterns pour la motivation
+    elif any(word in question_lower for word in ['motivation', 'motivé', 'motivés', 'intérêt', 'passion']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?volunteer ?label ?phone ?motivation ?generalMotivation ?skills ?activityLevel ?experience
+        WHERE {
+            ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
+            ?volunteer <http://webprotege.stanford.edu/R9PW79FzwQKWuQYdTdYlHzN> ?motivation .
+            
+            OPTIONAL { ?volunteer rdfs:label ?label . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RXzg1eKoCWK7S9zHsFoTFC> ?generalMotivation . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience . }
+        }
+        ORDER BY ?label
+        """
+    
+    # Patterns pour les contacts
+    elif any(word in question_lower for word in ['contact', 'téléphone', 'phone', 'numéro', 'email', 'courriel']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?user
+        WHERE {
+            ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
+            ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone .
+            
+            OPTIONAL { ?volunteer rdfs:label ?label . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?user . }
+        }
+        ORDER BY ?label
+        """
+    
+    # Patterns pour les statistiques
+    elif any(word in question_lower for word in ['combien', 'nombre', 'total', 'statistique', 'stats', 'répartition']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        
+        SELECT 
+            (COUNT(?volunteer) as ?total)
+            (COUNT(?active) as ?active_count)
+            (COUNT(?experienced) as ?experienced_count)
+            (COUNT(?with_skills) as ?with_skills_count)
+            (COUNT(?with_medical) as ?with_medical_count)
+        WHERE {
+            ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
+            
+            OPTIONAL { 
+                ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel .
+                FILTER(REGEX(?activityLevel, "actif", "i"))
+                BIND(?volunteer as ?active)
+            }
+            OPTIONAL { 
+                ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience .
+                BIND(?volunteer as ?experienced)
+            }
+            OPTIONAL { 
+                ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills .
+                BIND(?volunteer as ?with_skills)
+            }
+            OPTIONAL { 
+                ?volunteer <http://webprotege.stanford.edu/R9F95BAS8WtbTv8ZGBaPe42> ?medicalConditions .
+                BIND(?volunteer as ?with_medical)
+            }
+        }
+        """
+    
+    # Requête générale pour tous les volontaires
+    else:
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?motivation ?experience ?medicalConditions ?generalMotivation ?user
+        WHERE {
+            ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
+            
+            OPTIONAL { ?volunteer rdfs:label ?label . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9PW79FzwQKWuQYdTdYlHzN> ?motivation . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9F95BAS8WtbTv8ZGBaPe42> ?medicalConditions . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RXzg1eKoCWK7S9zHsFoTFC> ?generalMotivation . }
+            OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?user . }
+        }
+        ORDER BY ?label
+        LIMIT 20
+        """
+
+def handle_assignment_questions(question_lower):
+    """Gère intelligemment toutes les questions sur les assignements"""
+    
+    # Patterns pour les statuts
+    if any(word in question_lower for word in ['approuvé', 'approved', 'validé', 'accepté', 'confirmé']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?assignment ?label ?volunteer ?event ?startDate ?status ?rating
+        WHERE {
+            ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
+            ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
+            FILTER(REGEX(?status, "approuvé", "i"))
+            
+            OPTIONAL { ?assignment rdfs:label ?label . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBqttmTqH5uyTK64wj0hDiD> ?event . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
+        }
+        ORDER BY ?startDate DESC
+        """
+    
+    elif any(word in question_lower for word in ['rejeté', 'rejected', 'refusé', 'non approuvé', 'refusé']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?assignment ?label ?volunteer ?event ?startDate ?status ?rating
+        WHERE {
+            ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
+            ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
+            FILTER(REGEX(?status, "non approuvé|rejeté", "i"))
+            
+            OPTIONAL { ?assignment rdfs:label ?label . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBqttmTqH5uyTK64wj0hDiD> ?event . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
+        }
+        ORDER BY ?startDate DESC
+        """
+    
+    # Patterns pour les notes/évaluations
+    elif any(word in question_lower for word in ['note', 'rating', 'évaluation', 'score', 'étoile', 'étoiles']):
+        # Extraire la note minimale si mentionnée
+        rating_filter = ""
+        for i in range(1, 6):
+            if f'{i} étoile' in question_lower or f'{i} étoiles' in question_lower or f'note {i}' in question_lower:
+                rating_filter = f'FILTER(?rating >= {i})'
+                break
+        
+        return f"""
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?assignment ?label ?volunteer ?event ?startDate ?status ?rating
+        WHERE {{
+            ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
+            ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating .
+            
+            OPTIONAL {{ ?assignment rdfs:label ?label . }}
+            OPTIONAL {{ ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }}
+            OPTIONAL {{ ?assignment <http://webprotege.stanford.edu/RBqttmTqH5uyTK64wj0hDiD> ?event . }}
+            OPTIONAL {{ ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate . }}
+            OPTIONAL {{ ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status . }}
+            {rating_filter}
+        }}
+        ORDER BY DESC(?rating)
+        """
+    
+    # Patterns pour les dates
+    elif any(word in question_lower for word in ['récent', 'recent', 'nouveau', 'nouveaux', 'dernier', 'derniers']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?assignment ?label ?volunteer ?event ?startDate ?status ?rating
+        WHERE {
+            ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
+            ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate .
+            
+            OPTIONAL { ?assignment rdfs:label ?label . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBqttmTqH5uyTK64wj0hDiD> ?event . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
+        }
+        ORDER BY DESC(?startDate)
+        LIMIT 10
+        """
+    
+    # Patterns pour les statistiques
+    elif any(word in question_lower for word in ['combien', 'nombre', 'total', 'statistique', 'stats', 'répartition', 'bilan']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        
+        SELECT 
+            (COUNT(?assignment) as ?total)
+            (COUNT(?approved) as ?approved_count)
+            (COUNT(?rejected) as ?rejected_count)
+            (AVG(?rating) as ?average_rating)
+        WHERE {
+            ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
+            
+            OPTIONAL { 
+                ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
+                FILTER(REGEX(?status, "approuvé", "i"))
+                BIND(?assignment as ?approved)
+            }
+            OPTIONAL { 
+                ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
+                FILTER(REGEX(?status, "non approuvé|rejeté", "i"))
+                BIND(?assignment as ?rejected)
+            }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
+        }
+        """
+    
+    # Patterns pour les volontaires spécifiques
+    elif any(word in question_lower for word in ['volontaire', 'volunteer', 'de', 'par']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?assignment ?label ?volunteer ?event ?startDate ?status ?rating
+        WHERE {
+            ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
+            ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer .
+            
+            OPTIONAL { ?assignment rdfs:label ?label . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBqttmTqH5uyTK64wj0hDiD> ?event . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
+        }
+        ORDER BY ?volunteer ?startDate DESC
+        """
+    
+    # Patterns pour les événements
+    elif any(word in question_lower for word in ['événement', 'event', 'évènement']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?assignment ?label ?volunteer ?event ?startDate ?status ?rating
+        WHERE {
+            ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
+            ?assignment <http://webprotege.stanford.edu/RBqttmTqH5uyTK64wj0hDiD> ?event .
+            
+            OPTIONAL { ?assignment rdfs:label ?label . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
+        }
+        ORDER BY ?event ?startDate DESC
+        """
+    
+    # Requête générale pour tous les assignements
+    else:
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?assignment ?label ?volunteer ?event ?startDate ?status ?rating
+        WHERE {
+            ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
+            
+            OPTIONAL { ?assignment rdfs:label ?label . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBqttmTqH5uyTK64wj0hDiD> ?event . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
+        }
+        ORDER BY ?assignment
+        LIMIT 20
+        """
+
 def transform_question_to_sparql_combined(question):
-    """Transforme une question en français en requête SPARQL - Version combinée"""
+    """Transforme une question en français en requête SPARQL - Version combinée et intelligente"""
     question_lower = question.lower()
     
+    # QUESTIONS SUR LES VOLONTAIRES - PRIORITÉ ABSOLUE
+    if any(word in question_lower for word in ['volontaire', 'volunteer', 'bénévole', 'benevole']):
+        return handle_volunteer_questions(question_lower)
+    
+    # QUESTIONS SUR LES ASSIGNEMENTS - PRIORITÉ ABSOLUE
+    elif any(word in question_lower for word in ['assignement', 'assignment', 'assignation', 'affectation']):
+        return handle_assignment_questions(question_lower)
+    
     # QUESTIONS SUR LES CAMPAGNES
-    if any(word in question_lower for word in ["campagne", "campaign"]):
+    elif any(word in question_lower for word in ["campagne", "campaign"]):
         if any(word in question_lower for word in ["actif", "active", "en cours", "current"]):
             return """
             PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
@@ -938,206 +1382,6 @@ def transform_question_to_sparql_combined(question):
             ORDER BY ?lastName ?firstName
             """
     
-    # QUESTIONS SUR LES VOLONTAIRES
-    elif any(word in question_lower for word in ['volontaire', 'volunteer', 'bénévole', 'benevole']):
-        if any(word in question_lower for word in ['actif', 'active', 'très actif']):
-            return """
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            
-            SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?motivation ?experience
-            WHERE {
-                ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
-                ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel .
-                FILTER(REGEX(?activityLevel, "actif", "i"))
-                
-                OPTIONAL { ?volunteer rdfs:label ?label . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9PW79FzwQKWuQYdTdYlHzN> ?motivation . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience . }
-            }
-            ORDER BY ?label
-            """
-        
-        elif any(word in question_lower for word in ['compétence', 'skill', 'compétences', 'skills', 'domaine']):
-            return """
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            
-            SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?experience
-            WHERE {
-                ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
-                ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills .
-                
-                OPTIONAL { ?volunteer rdfs:label ?label . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience . }
-            }
-            ORDER BY ?skills
-            """
-        
-        elif any(word in question_lower for word in ['expérience', 'experience', 'antécédent', 'historique']):
-            return """
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            
-            SELECT ?volunteer ?label ?phone ?experience ?skills ?activityLevel
-            WHERE {
-                ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
-                ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience .
-                
-                OPTIONAL { ?volunteer rdfs:label ?label . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
-            }
-            ORDER BY ?label
-            """
-        
-        elif any(word in question_lower for word in ['contact', 'téléphone', 'phone', 'numéro']):
-            return """
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            
-            SELECT ?volunteer ?label ?phone ?skills ?activityLevel
-            WHERE {
-                ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
-                ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone .
-                
-                OPTIONAL { ?volunteer rdfs:label ?label . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
-            }
-            ORDER BY ?label
-            """
-        
-        else:
-            # Requête générale pour les volontaires
-            return """
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            
-            SELECT ?volunteer ?label ?phone ?skills ?activityLevel ?motivation ?experience
-            WHERE {
-                ?volunteer a <http://webprotege.stanford.edu/RCXXzqv27uFuX5nYU81XUvw> .
-                
-                OPTIONAL { ?volunteer rdfs:label ?label . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R8BxRbqkCT2nIQCr5UoVlXD> ?phone . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RBqpxvMVBnwM1Wb6OhzTpHf> ?skills . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/RCHqvY6cUdoI8XfAt441VX0> ?activityLevel . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9PW79FzwQKWuQYdTdYlHzN> ?motivation . }
-                OPTIONAL { ?volunteer <http://webprotege.stanford.edu/R9tdW5crNU837y5TemwdNfR> ?experience . }
-            }
-            ORDER BY ?label
-            LIMIT 20
-            """
-    
-    # QUESTIONS SUR LES ASSIGNEMENTS
-    elif any(word in question_lower for word in ['assignement', 'assignment', 'assignation', 'affectation']):
-        if any(word in question_lower for word in ['approuvé', 'approved', 'validé', 'accepté']):
-            return """
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            
-            SELECT ?assignment ?label ?volunteer ?startDate ?status ?rating
-            WHERE {
-                ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
-                ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
-                FILTER(REGEX(?status, "approuvé", "i"))
-                
-                OPTIONAL { ?assignment rdfs:label ?label . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
-            }
-            ORDER BY ?startDate DESC
-            """
-        
-        elif any(word in question_lower for word in ['rejeté', 'rejected', 'refusé', 'non approuvé']):
-            return """
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            
-            SELECT ?assignment ?label ?volunteer ?startDate ?status ?rating
-            WHERE {
-                ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
-                ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
-                FILTER(REGEX(?status, "non approuvé", "i"))
-                
-                OPTIONAL { ?assignment rdfs:label ?label . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
-            }
-            ORDER BY ?startDate DESC
-            """
-        
-        elif any(word in question_lower for word in ['note', 'rating', 'évaluation', 'score', 'étoile']):
-            return """
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            
-            SELECT ?assignment ?label ?volunteer ?startDate ?status ?rating
-            WHERE {
-                ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
-                ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating .
-                
-                OPTIONAL { ?assignment rdfs:label ?label . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status . }
-            }
-            ORDER BY DESC(?rating)
-            """
-        
-        elif any(word in question_lower for word in ['statistique', 'stats', 'résumé', 'bilan']):
-            return """
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            
-            SELECT 
-                (COUNT(?assignment) as ?total)
-                (COUNT(?approved) as ?approved_count)
-                (COUNT(?rejected) as ?rejected_count)
-                (AVG(?rating) as ?average_rating)
-            WHERE {
-                ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
-                
-                OPTIONAL { 
-                    ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
-                    FILTER(REGEX(?status, "approuvé", "i"))
-                    BIND(?assignment as ?approved)
-                }
-                OPTIONAL { 
-                    ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
-                    FILTER(REGEX(?status, "non approuvé", "i"))
-                    BIND(?assignment as ?rejected)
-                }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
-            }
-            """
-        
-        else:
-            # Requête générale pour les assignements
-            return """
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            
-            SELECT ?assignment ?label ?volunteer ?event ?startDate ?status ?rating
-            WHERE {
-                ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
-                
-                OPTIONAL { ?assignment rdfs:label ?label . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBqttmTqH5uyTK64wj0hDiD> ?event . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status . }
-                OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
-            }
-            ORDER BY ?assignment
-            LIMIT 20
-            """
 
     # QUESTIONS SUR LES CERTIFICATIONS
     elif any(word in question_lower for word in ['certification', 'certificat', 'diplôme', 'récompense', 'badge']):

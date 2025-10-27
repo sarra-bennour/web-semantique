@@ -46,19 +46,30 @@ const SemanticSearch = () => {
       "Locations à Boston",
     ],
     "Volontaires": [
-    "Quels sont les volontaires ?",
-    "Quels volontaires sont actifs ?",
-    "Quelles sont les compétences des volontaires ?",
-    "Quels volontaires ont de l'expérience ?",
-    "Quels sont les contacts des volontaires ?"
+      "Quels sont les volontaires ?",
+      "Qui sont les volontaires non actifs ?",
+      "Quels volontaires sont très actifs ?",
+      "Quels volontaires sont actifs ?",
+      "Quelles sont les compétences des volontaires ?",
+      "Quels volontaires ont de l'expérience ?",
+      "Quels volontaires ont des compétences en programmation ?",
+      "Quels volontaires n'ont pas de conditions médicales ?",
+      "Quels volontaires sont motivés ?",
+      "Quels sont les contacts des volontaires ?",
+      "Combien y a-t-il de volontaires ?",
+      "Statistiques des volontaires"
     ],
-    "assignements":
-    [
-        "Quels sont les assignements ?",
-    "Quels assignements sont approuvés ?",
-    "Quels assignements sont rejetés ?",
-    "Quelles sont les notes des assignements ?",
-    "Statistiques des assignements"
+    "Assignements": [
+      "Quels sont les assignements ?",
+      "Quels assignements sont approuvés ?",
+      "Quels assignements sont rejetés ?",
+      "Quels assignements ont une note de 5 étoiles ?",
+      "Quels assignements sont récents ?",
+      "Quels assignements ont une note de 4 étoiles et plus ?",
+      "Assignements par volontaire",
+      "Assignements par événement",
+      "Combien y a-t-il d'assignements ?",
+      "Statistiques des assignements"
     ],
     "Certificats": [
       "Quelles certifications ont été émises ?",
@@ -368,7 +379,7 @@ const SemanticSearch = () => {
         <div className="suggestion-category">
           <h5>📋 Assignements</h5>
           <div className="suggestion-buttons">
-            {categorizedSuggestions.assignements.map((suggestion, index) => (
+            {categorizedSuggestions.Assignements.map((suggestion, index) => (
               <button
                 key={index}
                 type="button"
