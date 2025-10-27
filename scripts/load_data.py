@@ -13,8 +13,8 @@ def load_ontology_to_fuseki():
         g = Graph()
         print("Chargement du fichier RDF...")
         
-        # Parser en ignorant les erreurs
-        g.parse("data/eco-ontology.rdf", format="xml", errors='ignore')
+        # Parser sans ignorer les erreurs pour ne pas perdre de données
+        g.parse("data/eco-ontology.rdf", format="xml")
         print(f"Ontologie chargée: {len(g)} triplets trouvés")
         
         # Upload vers Fuseki par lots de triplets
