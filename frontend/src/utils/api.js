@@ -19,7 +19,8 @@ api.interceptors.response.use(
 );
 
 export const searchAPI = {
-  semanticSearch: (question) => api.post('/search', { question }),
+  // Use the semantic endpoint implemented in backend/modules/campRes.py
+  semanticSearch: (question) => api.post('/search/semantic', { question }),
   aiSearch: (question) => api.post('/search/ai', { question }),
   hybridSearch: (question) => api.post('/search/hybrid', { question }),
 };

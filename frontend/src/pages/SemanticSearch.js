@@ -38,6 +38,14 @@ const SemanticSearch = () => {
       "Qui organise les événements ?",
       "Montre-moi les organisateurs d'événements",
     ],
+    "Blogs": [
+      "Quels sont les derniers articles de blog ?",
+      "Donne-moi les titres des blogs sur le compost",
+      "Combien y a-t-il de blogs ?",
+      "Liste des blogs par date",
+      "Montre-moi les articles sur l'énergie solaire",
+      "Quels blogs parlent de réduction des déchets ?"
+    ],
     "Locations": [
       "Où se déroulent les événements ?",
       "Quels événements ont lieu à Paris ?",
@@ -75,13 +83,14 @@ const SemanticSearch = () => {
     ]
   };
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!question.trim()) return;
+  // Perform a semantic search for the given question text
+  const performSemanticSearch = async (q) => {
+    if (!q || !q.trim()) return;
 
+    setQuestion(q);
     setLoading(true);
     try {
-      const response = await searchAPI.semanticSearch(question);
+      const response = await searchAPI.semanticSearch(q);
       setResults(response.data);
     } catch (error) {
       console.error('Erreur lors de la recherche:', error);
@@ -90,8 +99,15 @@ const SemanticSearch = () => {
     setLoading(false);
   };
 
+  const handleSearch = (e) => {
+    // form submit wrapper: prevent default and call performSemanticSearch
+    if (e && e.preventDefault) e.preventDefault();
+    performSemanticSearch(question);
+  };
+
   const handleSuggestionClick = (suggestion) => {
-    setQuestion(suggestion);
+    // When user clicks a suggested question, immediately run the semantic search
+    performSemanticSearch(suggestion);
   };
 
   // Fonction pour afficher les résultats de comptage
@@ -204,7 +220,8 @@ const SemanticSearch = () => {
             <table className="results-table">
               <thead>
                 <tr>
-                  {Object.keys(resultsData[0]).map(key => (
+                  {/* Filter out internal id column 'b' and similar resource keys */}
+                  {Object.keys(resultsData[0]).filter(key => !["b", "resource", "item"].includes(key)).map(key => (
                     <th key={key}>{key}</th>
                   ))}
                 </tr>
@@ -212,16 +229,15 @@ const SemanticSearch = () => {
               <tbody>
                 {resultsData.map((row, index) => (
                   <tr key={index}>
-                    {Object.values(row).map((cell, cellIndex) => (
-                      <td key={cellIndex}>
-                        {cell.value ? 
-                          (String(cell.value).length > 50 
-                            ? String(cell.value).substring(0, 50) + '...' 
-                            : String(cell.value))
-                          : 'N/A'
-                        }
-                      </td>
-                    ))}
+                    {Object.keys(row).filter(key => !["b", "resource", "item"].includes(key)).map((cellKey, cellIndex) => {
+                      const cell = row[cellKey];
+                      const value = cell && cell.value ? String(cell.value) : 'N/A';
+                      return (
+                        <td key={cellIndex}>
+                          {value.length > 50 ? value.substring(0, 50) + '...' : value}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
@@ -232,7 +248,7 @@ const SemanticSearch = () => {
             <table className="results-table">
               <thead>
                 <tr>
-                  {Object.keys(resultsData[0]).map(key => (
+                  {Object.keys(resultsData[0]).filter(key => !["b", "resource", "item"].includes(key)).map(key => (
                     <th key={key}>{key}</th>
                   ))}
                 </tr>
@@ -240,11 +256,11 @@ const SemanticSearch = () => {
               <tbody>
                 {resultsData.map((row, index) => (
                   <tr key={index}>
-                    {Object.values(row).map((value, cellIndex) => (
+                    {Object.keys(row).filter(key => !["b", "resource", "item"].includes(key)).map((k, cellIndex) => (
                       <td key={cellIndex}>
-                        {String(value).length > 50 
-                          ? String(value).substring(0, 50) + '...' 
-                          : String(value)
+                        {String(row[k]).length > 50 
+                          ? String(row[k]).substring(0, 50) + '...' 
+                          : String(row[k])
                         }
                       </td>
                     ))}
@@ -353,6 +369,22 @@ const SemanticSearch = () => {
           <h5>👥 Volontaires</h5>
           <div className="suggestion-buttons">
             {categorizedSuggestions.Volontaires.map((suggestion, index) => (
+              <button
+                key={index}
+                type="button"
+                className="suggestion-button"
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="suggestion-category">
+          <h5>📝 Blogs</h5>
+          <div className="suggestion-buttons">
+            {categorizedSuggestions.Blogs.map((suggestion, index) => (
               <button
                 key={index}
                 type="button"

@@ -581,6 +581,98 @@ def transform_question_to_sparql(question):
             ORDER BY ?name
             LIMIT 20
             """
+    # QUESTIONS SUR LES BLOGS
+    elif any(word in question_lower for word in ["blog", "blogs", "article", "articles", "post"]):
+        # Comptage de blogs
+        if "nombre" in question_lower or "combien" in question_lower or "count" in question_lower:
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            SELECT (COUNT(DISTINCT ?b) as ?totalBlogs)
+            WHERE { ?b a eco:Blog }
+            """
+
+        # Requête pour les titres / liste de blogs
+        if any(word in question_lower for word in ["titre", "titres", "liste", "donne", "montre", "quel", "quels"]):
+            return """
+            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+            SELECT ?b ?title ?pubDate ?category WHERE {
+                ?b a eco:Blog .
+                OPTIONAL { ?b eco:blogTitle ?title }
+                OPTIONAL { ?b eco:publicationDate ?pubDate }
+                OPTIONAL { ?b eco:category ?category }
+            }
+            ORDER BY DESC(?pubDate)
+            LIMIT 50
+            """
+
+        # Recherche par mot-clé (détecte phrases contenant 'sur <terme>')
+        if " sur " in question_lower or " about " in question_lower:
+            term = None
+            try:
+                if " sur " in question_lower:
+                    term = question_lower.split(" sur ",1)[1].split()[0:6]
+                else:
+                    term = question_lower.split(" about ",1)[1].split()[0:6]
+                term = " ".join(term).strip().replace('?', '')
+            except Exception:
+                term = None
+
+            if term:
+                # utiliser le terme pour filtrer titre ou contenu
+                return f"""
+                PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                SELECT ?b ?title ?pubDate ?category WHERE {{
+                    ?b a eco:Blog .
+                    OPTIONAL {{ ?b eco:blogTitle ?title }}
+                    OPTIONAL {{ ?b eco:blogContent ?content }}
+                    OPTIONAL {{ ?b eco:publicationDate ?pubDate }}
+                    OPTIONAL {{ ?b eco:category ?category }}
+                    FILTER( (BOUND(?title) && CONTAINS(LCASE(STR(?title)), "{term}")) || (BOUND(?content) && CONTAINS(LCASE(STR(?content)), "{term}")) )
+                }}
+                ORDER BY DESC(?pubDate)
+                LIMIT 50
+                """
+
+        # Recherche par date (ex: 'après 2025' ou 'avant 2025')
+        if "après" in question_lower or "avant" in question_lower or "after" in question_lower or "before" in question_lower:
+            # tentative simple d'extraire une année
+            import re
+            m = re.search(r"(20\d{2})", question_lower)
+            if m:
+                year = m.group(1)
+                if any(w in question_lower for w in ["après", "after"]):
+                    return f"""
+                    PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                    SELECT ?b ?title ?pubDate WHERE {{
+                        ?b a eco:Blog .
+                        OPTIONAL {{ ?b eco:blogTitle ?title }}
+                        OPTIONAL {{ ?b eco:publicationDate ?pubDate }}
+                        FILTER(BOUND(?pubDate) && ?pubDate >= "{year}-01-01T00:00:00"^^xsd:dateTime)
+                    }} ORDER BY DESC(?pubDate) LIMIT 50
+                    """
+                else:
+                    return f"""
+                    PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                    SELECT ?b ?title ?pubDate WHERE {{
+                        ?b a eco:Blog .
+                        OPTIONAL {{ ?b eco:blogTitle ?title }}
+                        OPTIONAL {{ ?b eco:publicationDate ?pubDate }}
+                        FILTER(BOUND(?pubDate) && ?pubDate <= "{year}-12-31T23:59:59"^^xsd:dateTime)
+                    }} ORDER BY DESC(?pubDate) LIMIT 50
+                    """
+
+        # Requête générale pour blogs
+        return """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        SELECT ?b ?title ?pubDate ?category WHERE {
+            ?b a eco:Blog .
+            OPTIONAL { ?b eco:blogTitle ?title }
+            OPTIONAL { ?b eco:publicationDate ?pubDate }
+            OPTIONAL { ?b eco:category ?category }
+        }
+        ORDER BY DESC(?pubDate)
+        LIMIT 50
+        """
     
     # QUESTIONS SUR LES RESSOURCES
     elif any(word in question_lower for word in ["ressource", "resource"]):
