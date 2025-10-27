@@ -31,6 +31,12 @@ const Navbar = () => {
             <Link to="/users" className="nav-link">Utilisateurs</Link>
           </li>
           <li className="nav-item">
+            <Link to="/sponsors" className="nav-link">Sponsors</Link>
+          </li>
+          <li className="nav-item">
+            <Link to="/donations" className="nav-link">Donations</Link>
+          </li>
+          <li className="nav-item">
             <Link to="/search" className="nav-link">Recherche Sémantique</Link>
           </li>
         </ul>

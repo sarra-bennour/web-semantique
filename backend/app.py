@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+import logging
 from modules.campRes import api_routes
 import os
 from modules.events import events_bp
@@ -8,10 +9,15 @@ from modules.users import users_bp
 from modules.search import search_bp
 from modules.reservations import reservations_bp
 from modules.certifications import certifications_bp
+from modules.sponsors import sponsors_bp
 from sparql_utils import sparql_utils
 
 app = Flask(__name__)
 CORS(app)
+
+# Basic logger setup to avoid NameError in exception handlers
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Enregistrement des routes
 app.register_blueprint(api_routes, url_prefix='/api')
@@ -21,6 +27,7 @@ app.register_blueprint(users_bp, url_prefix='/api')
 app.register_blueprint(search_bp, url_prefix='/api')
 app.register_blueprint(reservations_bp, url_prefix='/api')
 app.register_blueprint(certifications_bp, url_prefix='/api')
+app.register_blueprint(sponsors_bp, url_prefix='/api')
 
 
 @app.route('/')

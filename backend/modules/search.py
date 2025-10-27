@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from sparql_utils import sparql_utils
+import re
 
 search_bp = Blueprint('search', __name__)
 
@@ -184,103 +185,209 @@ def transform_question_to_sparql_combined(question):
             }
             ORDER BY ?name
             """
-        
-        elif "matériel" in question_lower or "material" in question_lower:
-            return """
+
+    # QUESTIONS SUR LES SPONSORS ET DONATIONS
+    elif any(word in question_lower for word in ['sponsor', 'sponsors', 'sponsorship', 'sponsorships', 'donation', 'donations', 'donateur', 'donateurs', 'commanditaire', 'entreprise', 'entreprises']):
+        # Try to extract a sponsorship level term first (e.g., "niveau Gold", "sponsorshipLevel Gold")
+        level_match = re.search(r"(?:niveau|sponsorshiplevel|sponsorship level|level)\s+(?:de\s+)?([a-z0-9_\- ]+)", question_lower)
+        if level_match:
+            term = level_match.group(1).strip()
+            term = term.strip("\"' .?/,;:")
+            term_lower = term.lower()
+            return f"""
             PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            
-            SELECT ?name ?description ?category ?quantity ?unitCost ?materialType
-            WHERE {
-                ?resource a eco:MaterialResource .
-                ?resource eco:resourceName ?name .
-                OPTIONAL { ?resource eco:resourceDescription ?description }
-                OPTIONAL { ?resource eco:resourceCategory ?category }
-                OPTIONAL { ?resource eco:quantityAvailable ?quantity }
-                OPTIONAL { ?resource eco:unitCost ?unitCost }
-                OPTIONAL { ?resource eco:materialType ?materialType }
-            }
-            ORDER BY ?name
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+            SELECT ?sponsor (?companyName AS ?nomEntreprise) (?industry AS ?secteur) (?contactEmail AS ?courriel) (?phoneNumber AS ?telephone) (?website AS ?siteWeb) (?levelName AS ?niveauDeSponsoring)
+            WHERE {{
+                ?sponsor a eco:Sponsor .
+                OPTIONAL {{ ?sponsor eco:companyName ?companyName }}
+                OPTIONAL {{ ?sponsor eco:industry ?industry }}
+                OPTIONAL {{ ?sponsor eco:contactEmail ?contactEmail }}
+                OPTIONAL {{ ?sponsor eco:phoneNumber ?phoneNumber }}
+                OPTIONAL {{ ?sponsor eco:website ?website }}
+                OPTIONAL {{ ?sponsor eco:hasSponsorshipLevel ?level . OPTIONAL {{ ?level eco:levelName ?levelName }} }}
+                FILTER(CONTAINS(LCASE(STR(?levelName)), "{term_lower}"))
+            }}
+            ORDER BY ?companyName
+            LIMIT 100
             """
-        
-        elif "équipement" in question_lower or "equipment" in question_lower:
-            return """
+
+        # Try to extract an industry/sector term from the question (e.g., "industrie GreenTechnology")
+        industry_match = re.search(r"(?:industrie|secteur|industry)\s+([a-z0-9_\- ]+)", question_lower)
+        if industry_match:
+            term = industry_match.group(1).strip()
+            # sanitize term
+            term = term.strip("\"' .?/,;:")
+            term_lower = term.lower()
+            return f"""
             PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            
-            SELECT ?name ?description ?category ?quantity ?unitCost ?equipmentType
-            WHERE {
-                ?resource a eco:EquipmentResource .
-                ?resource eco:resourceName ?name .
-                OPTIONAL { ?resource eco:resourceDescription ?description }
-                OPTIONAL { ?resource eco:resourceCategory ?category }
-                OPTIONAL { ?resource eco:quantityAvailable ?quantity }
-                OPTIONAL { ?resource eco:unitCost ?unitCost }
-                OPTIONAL { ?resource eco:equipmentType ?equipmentType }
-            }
-            ORDER BY ?name
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            SELECT ?sponsor (?companyName AS ?nomEntreprise) (?industry AS ?secteur) (?contactEmail AS ?courriel) (?phoneNumber AS ?telephone) (?website AS ?siteWeb) (?levelName AS ?niveauDeSponsoring)
+            WHERE {{
+                ?sponsor a eco:Sponsor .
+                OPTIONAL {{ ?sponsor eco:companyName ?companyName }}
+                OPTIONAL {{ ?sponsor eco:industry ?industry }}
+                OPTIONAL {{ ?sponsor eco:contactEmail ?contactEmail }}
+                OPTIONAL {{ ?sponsor eco:phoneNumber ?phoneNumber }}
+                OPTIONAL {{ ?sponsor eco:website ?website }}
+                OPTIONAL {{ ?sponsor eco:hasSponsorshipLevel ?level . OPTIONAL {{ ?level eco:levelName ?levelName }} }}
+                FILTER(CONTAINS(LCASE(STR(?industry)), "{term_lower}"))
+            }}
+            ORDER BY ?companyName
             """
-        
-        elif "financière" in question_lower or "financial" in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            
-            SELECT ?name ?description ?category ?quantity ?unitCost ?currency
-            WHERE {
-                ?resource a eco:FinancialResource .
-                ?resource eco:resourceName ?name .
-                OPTIONAL { ?resource eco:resourceDescription ?description }
-                OPTIONAL { ?resource eco:resourceCategory ?category }
-                OPTIONAL { ?resource eco:quantityAvailable ?quantity }
-                OPTIONAL { ?resource eco:unitCost ?unitCost }
-                OPTIONAL { ?resource eco:currency ?currency }
-            }
-            ORDER BY ?name
-            """
-        
-        elif "numérique" in question_lower or "digital" in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            
-            SELECT ?name ?description ?category ?quantity ?unitCost
-            WHERE {
-                ?resource a eco:DigitalResource .
-                ?resource eco:resourceName ?name .
-                OPTIONAL { ?resource eco:resourceDescription ?description }
-                OPTIONAL { ?resource eco:resourceCategory ?category }
-                OPTIONAL { ?resource eco:quantityAvailable ?quantity }
-                OPTIONAL { ?resource eco:unitCost ?unitCost }
-            }
-            ORDER BY ?name
-            """
-        
-        else:
-            # Requête générale pour les ressources
+
+        # General sponsor query (no specific industry filter)
+        # If the question explicitly asks for sponsors/entreprises who made donations,
+        # return only sponsors that have made donations by joining on eco:makesDonation.
+        if any(word in question_lower for word in ['sponsor', 'sponsors', 'parrain', 'commanditaire', 'commanditaires', 'entreprise', 'entreprises']):
+            # If the question also mentions donations, filter sponsors to those who made donations
+            if any(word in question_lower for word in ['donation', 'donations', 'donateur', 'donateurs', 'fund', 'funds', 'finance', 'financement', 'fonds']):
+                return """
+                PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                SELECT DISTINCT ?sponsor (?companyName AS ?nomEntreprise) (?industry AS ?secteur) (?contactEmail AS ?courriel) (?phoneNumber AS ?telephone) (?website AS ?siteWeb) (?levelName AS ?niveauDeSponsoring) ?donation
+                WHERE {
+                    ?sponsor a eco:Sponsor .
+                    ?sponsor eco:makesDonation ?donation .
+                    OPTIONAL { ?sponsor eco:companyName ?companyName }
+                    OPTIONAL { ?sponsor eco:industry ?industry }
+                    OPTIONAL { ?sponsor eco:contactEmail ?contactEmail }
+                    OPTIONAL { ?sponsor eco:phoneNumber ?phoneNumber }
+                    OPTIONAL { ?sponsor eco:website ?website }
+                    OPTIONAL { ?sponsor eco:hasSponsorshipLevel ?level . OPTIONAL { ?level eco:levelName ?levelName } }
+                    OPTIONAL { ?donation eco:amount ?amount }
+                    OPTIONAL { ?donation eco:currency ?currency }
+                    OPTIONAL { ?donation eco:dateDonated ?date }
+                }
+                ORDER BY ?companyName
+                LIMIT 200
+                """
+
+            # Otherwise return all sponsors (no donation filter)
             return """
             PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            
-            SELECT ?name ?description ?category ?quantity ?unitCost ?type
+
+            SELECT ?sponsor (?companyName AS ?nomEntreprise) (?industry AS ?secteur) (?contactEmail AS ?courriel) (?phoneNumber AS ?telephone) (?website AS ?siteWeb) (?levelName AS ?niveauDeSponsoring)
             WHERE {
-                {
-                    ?resource a eco:Resource .
-                }
-                UNION
-                {
-                    ?subClass rdfs:subClassOf* eco:Resource .
-                    ?resource a ?subClass .
-                }
-                ?resource eco:resourceName ?name .
-                OPTIONAL { ?resource eco:resourceDescription ?description }
-                OPTIONAL { ?resource eco:resourceCategory ?category }
-                OPTIONAL { ?resource eco:quantityAvailable ?quantity }
-                OPTIONAL { ?resource eco:unitCost ?unitCost }
-                OPTIONAL { 
-                    ?resource a ?type .
-                    FILTER(?type != eco:Resource)
-                }
+                ?sponsor a eco:Sponsor .
+                OPTIONAL { ?sponsor eco:companyName ?companyName }
+                OPTIONAL { ?sponsor eco:industry ?industry }
+                OPTIONAL { ?sponsor eco:contactEmail ?contactEmail }
+                OPTIONAL { ?sponsor eco:phoneNumber ?phoneNumber }
+                OPTIONAL { ?sponsor eco:website ?website }
+                OPTIONAL { ?sponsor eco:hasSponsorshipLevel ?level . OPTIONAL { ?level eco:levelName ?levelName } }
             }
-            ORDER BY ?name
-            LIMIT 20
+            ORDER BY ?companyName
+            LIMIT 100
             """
+
+        # Donations summary or donations to a specific event
+        elif any(word in question_lower for word in ['fund', 'funds', 'funded', 'finance', 'financement', 'fonds', 'donation', 'donations', 'donateur', 'donateurs']):
+            # Look for an explicit donation type (e.g., 'de type FinancialDonation' or 'type financial')
+            type_match = re.search(r"(?:type|de type)\s+([A-Za-z0-9_\-]+)", question_lower)
+            if type_match:
+                raw = type_match.group(1).strip()
+                token = raw.strip("\"' .?/,;:")
+                token_lower = token.lower()
+
+                # common synonyms mapping (token -> class local name)
+                type_map = {
+                    'financial': 'FinancialDonation', 'financiere': 'FinancialDonation', 'financière': 'FinancialDonation', 'financialdonation': 'FinancialDonation', 'financialdonations': 'FinancialDonation',
+                    'material': 'MaterialDonation', 'materialdonation': 'MaterialDonation', 'materialdonations': 'MaterialDonation', 'matériel': 'MaterialDonation', 'materiel': 'MaterialDonation',
+                    'service': 'ServiceDonation', 'servicedonation': 'ServiceDonation', 'services': 'ServiceDonation'
+                }
+
+                # If token directly matches a mapped class, use the class IRI filter
+                if token_lower in type_map:
+                    class_name = type_map[token_lower]
+                    return f"""
+                    PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                    SELECT ?donation ?type (?amount AS ?montant) (?currency AS ?devise) (?donorName AS ?donateur) ?date
+                    WHERE {{
+                        ?donation a eco:{class_name} .
+                        OPTIONAL {{ ?donation eco:amount ?amount }}
+                        OPTIONAL {{ ?donation eco:currency ?currency }}
+                        OPTIONAL {{ ?donation eco:dateDonated ?date }}
+                        OPTIONAL {{ ?donation ^eco:makesDonation ?donor . OPTIONAL {{ ?donor eco:companyName ?donorName }} }}
+                    }}
+                    ORDER BY DESC(?date)
+                    LIMIT 200
+                    """
+                # If token looks like a class local name already (e.g., FinancialDonation)
+                if re.match(r'^[A-Za-z]+Donation$', token):
+                    class_name = token
+                    return f"""
+                    PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                    SELECT ?donation ?type (?amount AS ?montant) (?currency AS ?devise) (?donorName AS ?donateur) ?date
+                    WHERE {{
+                        ?donation a eco:{class_name} .
+                        OPTIONAL {{ ?donation eco:amount ?amount }}
+                        OPTIONAL {{ ?donation eco:currency ?currency }}
+                        OPTIONAL {{ ?donation eco:dateDonated ?date }}
+                        OPTIONAL {{ ?donation ^eco:makesDonation ?donor . OPTIONAL {{ ?donor eco:companyName ?donorName }} }}
+                    }}
+                    ORDER BY DESC(?date)
+                    LIMIT 200
+                    """
+                # Otherwise, try matching by rdfs:label on the donation's class
+                token_esc = token_lower.replace('"','')
+                return f"""
+                PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                SELECT ?donation ?type (?amount AS ?montant) (?currency AS ?devise) (?donorName AS ?donateur) ?date
+                WHERE {{
+                    ?donation a ?type .
+                    ?type rdfs:label ?typeLabel .
+                    FILTER(CONTAINS(LCASE(STR(?typeLabel)), "{token_esc}"))
+                    OPTIONAL {{ ?donation eco:amount ?amount }}
+                    OPTIONAL {{ ?donation eco:currency ?currency }}
+                    OPTIONAL {{ ?donation eco:dateDonated ?date }}
+                    OPTIONAL {{ ?donation ^eco:makesDonation ?donor . OPTIONAL {{ ?donor eco:companyName ?donorName }} }}
+                }}
+                ORDER BY DESC(?date)
+                LIMIT 200
+                """
+
+            # If not a type-specific question, check for event-scoped donations
+            if any(word in question_lower for word in ['event', 'événement', 'à', 'to']):
+                # Return only events that have donations. Group donations by event and provide counts and last donation date.
+                return """
+                PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                SELECT ?event ?eventTitle (COUNT(?donation) AS ?donationCount) (MAX(?date) AS ?lastDonation)
+                WHERE {
+                    ?donation a ?type .
+                    FILTER(?type = eco:Donation || ?type = eco:FinancialDonation || ?type = eco:MaterialDonation || ?type = eco:ServiceDonation)
+                    ?donation eco:fundsEvent ?event .
+                    ?event eco:eventTitle ?eventTitle .
+                    OPTIONAL { ?donation eco:dateDonated ?date }
+                }
+                GROUP BY ?event ?eventTitle
+                ORDER BY DESC(?donationCount)
+                LIMIT 200
+                """
+
+            else:
+                # General donations list (alias French labels) - only common donation classes
+                return """
+                PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+                SELECT ?donation ?type (?amount AS ?montant) (?currency AS ?devise) (?donorName AS ?donateur) ?date
+                WHERE {
+                    ?donation a ?type .
+                    FILTER(?type = eco:Donation || ?type = eco:FinancialDonation || ?type = eco:MaterialDonation || ?type = eco:ServiceDonation)
+                    OPTIONAL { ?donation eco:amount ?amount }
+                    OPTIONAL { ?donation eco:currency ?currency }
+                    OPTIONAL { ?donation eco:dateDonated ?date }
+                    OPTIONAL {
+                        ?donation ^eco:makesDonation ?donor .
+                        OPTIONAL { ?donor eco:companyName ?donorName }
+                    }
+                }
+                ORDER BY ?date
+                LIMIT 50
+                """
     
     # QUESTIONS SUR LES UTILISATEURS
     elif "utilisateur" in question_lower or "user" in question_lower:
@@ -694,6 +801,13 @@ def transform_question_to_sparql_combined(question):
             ?item eco:firstName ?name .
             OPTIONAL { ?item eco:lastName ?description }
             BIND("Utilisateur" as ?type)
+        }
+        UNION
+        {
+            ?item a eco:Sponsor .
+            OPTIONAL { ?item eco:companyName ?name . }
+            OPTIONAL { ?item eco:industry ?description . }
+            BIND("Sponsor" as ?type)
         }
         UNION
         {

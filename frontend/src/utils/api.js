@@ -22,6 +22,17 @@ export const searchAPI = {
   semanticSearch: (question) => api.post('/search', { question }),
 };
 
+export const sponsorsAPI = {
+  getAll: () => api.get('/sponsors'),
+  getById: (id) => api.get(`/sponsors/${id}`),
+  search: (filters) => api.post('/sponsors/search', filters),
+};
+
+export const donationsAPI = {
+  getAll: () => api.get('/donations'),
+  getById: (id) => api.get(`/donations/${id}`),
+};
+
 export const eventsAPI = {
   getAll: () => api.get('/events'),
   getById: (id) => api.get(`/events/${id}`),

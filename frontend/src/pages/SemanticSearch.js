@@ -11,10 +11,13 @@ const SemanticSearch = () => {
     "Quels sont les événements disponibles ?",
     "Où se déroulent les événements ?",
     "Qui organise les événements ?",
+    "Qui sont les sponsors ?",
+    "Quelles entreprises ont fait des donations ?",
     "Quelles locations sont disponibles ?",
     "Montre-moi les organisateurs d'événements",
     "Quels sont les volontaires ?",
     "Quels événements ont lieu à Paris ?",
+    "Montre les donations pour un événement spécifique",
     "Quelles sont les campagnes actives ?",
     "Quelles ressources sont disponibles ?",
     "Quelles réservations sont confirmées ?",
@@ -45,7 +48,19 @@ const SemanticSearch = () => {
   };
 
   const handleSuggestionClick = (suggestion) => {
+    // Set the suggestion and run the search immediately
     setQuestion(suggestion);
+    (async () => {
+      setLoading(true);
+      try {
+        const response = await searchAPI.semanticSearch(suggestion);
+        setResults(response.data);
+      } catch (error) {
+        console.error('Erreur lors de la recherche:', error);
+        setResults({ error: 'Erreur lors de la recherche sémantique' });
+      }
+      setLoading(false);
+    })();
   };
 
   const renderResults = () => {
@@ -84,26 +99,34 @@ const SemanticSearch = () => {
             <table className="results-table">
               <thead>
                 <tr>
-                  {Object.keys(resultsData[0]).map(key => (
-                    <th key={key}>{key}</th>
-                  ))}
+                  {/* Build a stable header order: collect all keys across rows then use that as column order */}
+                  {(() => {
+                    const headerSet = new Set();
+                    resultsData.forEach(row => Object.keys(row).forEach(k => headerSet.add(k)));
+                    const headers = Array.from(headerSet);
+                    return headers.map(key => (<th key={key}>{key}</th>));
+                  })()}
                 </tr>
               </thead>
               <tbody>
-                {resultsData.map((row, index) => (
-                  <tr key={index}>
-                    {Object.values(row).map((cell, cellIndex) => (
-                      <td key={cellIndex}>
-                        {cell.value ? 
-                          (String(cell.value).length > 50 
-                            ? String(cell.value).substring(0, 50) + '...' 
-                            : String(cell.value))
-                          : 'N/A'
-                        }
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                {(() => {
+                  const headerSet = new Set();
+                  resultsData.forEach(row => Object.keys(row).forEach(k => headerSet.add(k)));
+                  const headers = Array.from(headerSet);
+                  return resultsData.map((row, index) => (
+                    <tr key={index}>
+                      {headers.map((h, cellIndex) => {
+                        const cell = row[h];
+                        const val = cell && cell.value ? String(cell.value) : '';
+                        return (
+                          <td key={cellIndex}>
+                            {val ? (val.length > 50 ? val.substring(0, 50) + '...' : val) : 'N/A'}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ));
+                })()}
               </tbody>
             </table>
           </div>
@@ -143,7 +166,7 @@ const SemanticSearch = () => {
   return (
     <div className="semantic-search">
       <h1>Recherche Sémantique</h1>
-      <p>Posez votre question en langage naturel sur les événements, locations, utilisateurs, campagnes, réservations et certifications</p>
+      <p>Posez votre question en langage naturel sur les événements, locations, utilisateurs, campagnes, réservations, certifications, sponsors et donations</p>
       
       <form onSubmit={handleSearch} className="search-form">
         <input

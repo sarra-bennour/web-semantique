@@ -1826,7 +1826,7 @@
     <!-- http://www.semanticweb.org/eco-ontology#Sponsor -->
 
     <owl:Class rdf:about="http://www.semanticweb.org/eco-ontology#Sponsor">
-        <rdfs:subClassOf rdf:resource="http://xmlns.com/foaf/0.1/Organization"/>
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/eco-ontology#User"/>
         <rdfs:comment>Organization that supports events through donations</rdfs:comment>
         <rdfs:label>Sponsor</rdfs:label>
     </owl:Class>
@@ -2824,6 +2824,68 @@
     //
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
+
+    <!-- Sponsor and Donation Individuals added -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#AcmeCorp">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#Sponsor"/>
+        <companyName>Acme Corporation</companyName>
+        <contactEmail>contact@acme.example</contactEmail>
+        <phoneNumber>+1-555-0100</phoneNumber>
+        <industry>Manufacturing</industry>
+        <website>https://acme.example.com</website>
+        <makesDonation rdf:resource="http://www.semanticweb.org/eco-ontology#AcmeDonation1"/>
+        <rdfs:label>Acme Corporation</rdfs:label>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#AcmeDonation1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#FinancialDonation"/>
+        <amount rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">5000.00</amount>
+        <currency>USD</currency>
+        <dateDonated rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2025-03-15T10:00:00</dateDonated>
+        <fundsEvent rdf:resource="http://www.semanticweb.org/eco-ontology#EcoMusicFestival"/>
+        <rdfs:label>Acme Donation March 2025</rdfs:label>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#GreenLeafInc">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#Sponsor"/>
+        <companyName>GreenLeaf Inc</companyName>
+        <contactEmail>hello@greenleaf.example</contactEmail>
+        <phoneNumber>+44-20-7946-0011</phoneNumber>
+        <industry>Environmental Services</industry>
+        <website>https://greenleaf.example.org</website>
+        <makesDonation rdf:resource="http://www.semanticweb.org/eco-ontology#GreenLeafDonation1"/>
+        <rdfs:label>GreenLeaf Inc</rdfs:label>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#GreenLeafDonation1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#MaterialDonation"/>
+        <itemDescription>Recycling bins and safety gloves</itemDescription>
+        <estimatedValue rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1200.00</estimatedValue>
+        <dateDonated rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-08-01T09:30:00</dateDonated>
+        <fundsEvent rdf:resource="http://www.semanticweb.org/eco-ontology#BeachCleanup2024"/>
+        <rdfs:label>GreenLeaf Material Donation 2024</rdfs:label>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#LocalCharity">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#Sponsor"/>
+        <companyName>Local Charity Association</companyName>
+        <contactEmail>info@localcharity.example</contactEmail>
+        <phoneNumber>+33-1-2345-6789</phoneNumber>
+        <industry>Non-Profit</industry>
+        <website>https://localcharity.example.org</website>
+        <makesDonation rdf:resource="http://www.semanticweb.org/eco-ontology#LocalCharityService1"/>
+        <rdfs:label>Local Charity Association</rdfs:label>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/eco-ontology#LocalCharityService1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/eco-ontology#ServiceDonation"/>
+        <hoursDonated rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">40</hoursDonated>
+        <serviceDescription>Volunteer coordination and event staffing</serviceDescription>
+        <dateDonated rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2024-09-10T08:00:00</dateDonated>
+        <fundsEvent rdf:resource="http://www.semanticweb.org/eco-ontology#SustainableAgricultureWorkshop"/>
+        <rdfs:label>Local Charity Service Donation 2024</rdfs:label>
+    </owl:NamedIndividual>
 
     <rdf:Description rdf:about="http://www.semanticweb.org/eco-ontology#Review">
         <rdfs:comment>User reviews and ratings</rdfs:comment>
