@@ -346,10 +346,10 @@ def handle_volunteer_questions(question_lower):
         """
 
 def handle_assignment_questions(question_lower):
-    """Gère intelligemment toutes les questions sur les assignements"""
+    """Gère intelligemment toutes les questions sur les assignements - Version avancée"""
     
-    # Patterns pour les statuts
-    if any(word in question_lower for word in ['approuvé', 'approved', 'validé', 'accepté', 'confirmé']):
+    # Patterns pour les statuts - Plus de variations
+    if any(word in question_lower for word in ['approuvé', 'approved', 'validé', 'accepté', 'confirmé', 'accepté', 'validé']):
         return """
         PREFIX webprotege: <http://webprotege.stanford.edu/>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -358,7 +358,7 @@ def handle_assignment_questions(question_lower):
         WHERE {
             ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
             ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
-            FILTER(REGEX(?status, "approuvé", "i"))
+            FILTER(REGEX(?status, "approuvé|approved|validé|accepté|confirmé", "i"))
             
             OPTIONAL { ?assignment rdfs:label ?label . }
             OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
@@ -369,7 +369,7 @@ def handle_assignment_questions(question_lower):
         ORDER BY ?startDate DESC
         """
     
-    elif any(word in question_lower for word in ['rejeté', 'rejected', 'refusé', 'non approuvé', 'refusé']):
+    elif any(word in question_lower for word in ['rejeté', 'rejected', 'refusé', 'non approuvé', 'refusé', 'décliné', 'annulé']):
         return """
         PREFIX webprotege: <http://webprotege.stanford.edu/>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -378,7 +378,7 @@ def handle_assignment_questions(question_lower):
         WHERE {
             ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
             ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
-            FILTER(REGEX(?status, "non approuvé|rejeté", "i"))
+            FILTER(REGEX(?status, "non approuvé|rejeté|rejected|refusé|décliné|annulé", "i"))
             
             OPTIONAL { ?assignment rdfs:label ?label . }
             OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
@@ -389,14 +389,35 @@ def handle_assignment_questions(question_lower):
         ORDER BY ?startDate DESC
         """
     
-    # Patterns pour les notes/évaluations
-    elif any(word in question_lower for word in ['note', 'rating', 'évaluation', 'score', 'étoile', 'étoiles']):
+    # Patterns pour les notes/évaluations - Plus intelligents
+    elif any(word in question_lower for word in ['note', 'rating', 'évaluation', 'score', 'étoile', 'étoiles', 'notation', 'appréciation']):
         # Extraire la note minimale si mentionnée
         rating_filter = ""
-        for i in range(1, 6):
-            if f'{i} étoile' in question_lower or f'{i} étoiles' in question_lower or f'note {i}' in question_lower:
-                rating_filter = f'FILTER(?rating >= {i})'
-                break
+        rating_condition = ""
+        
+        # Détection des plages de notes
+        if '5 étoile' in question_lower or '5 étoiles' in question_lower or 'note 5' in question_lower:
+            rating_filter = 'FILTER(?rating = 5)'
+        elif '4 étoile' in question_lower or '4 étoiles' in question_lower or 'note 4' in question_lower:
+            rating_filter = 'FILTER(?rating >= 4)'
+        elif '3 étoile' in question_lower or '3 étoiles' in question_lower or 'note 3' in question_lower:
+            rating_filter = 'FILTER(?rating >= 3)'
+        elif '2 étoile' in question_lower or '2 étoiles' in question_lower or 'note 2' in question_lower:
+            rating_filter = 'FILTER(?rating >= 2)'
+        elif '1 étoile' in question_lower or '1 étoiles' in question_lower or 'note 1' in question_lower:
+            rating_filter = 'FILTER(?rating >= 1)'
+        elif 'et plus' in question_lower or 'et plus' in question_lower:
+            # Détection automatique de la note de base
+            for i in range(1, 6):
+                if f'{i} étoile' in question_lower:
+                    rating_filter = f'FILTER(?rating >= {i})'
+                    break
+        
+        # Détection des notes élevées
+        if any(word in question_lower for word in ['élevé', 'élevée', 'élevés', 'élevées', 'haute', 'haut', 'excellent', 'excellente']):
+            rating_filter = 'FILTER(?rating >= 4)'
+        elif any(word in question_lower for word in ['faible', 'faibles', 'basse', 'bas', 'mauvaise', 'mauvais']):
+            rating_filter = 'FILTER(?rating <= 2)'
         
         return f"""
         PREFIX webprotege: <http://webprotege.stanford.edu/>
@@ -417,8 +438,8 @@ def handle_assignment_questions(question_lower):
         ORDER BY DESC(?rating)
         """
     
-    # Patterns pour les dates
-    elif any(word in question_lower for word in ['récent', 'recent', 'nouveau', 'nouveaux', 'dernier', 'derniers']):
+    # Patterns pour les dates - Plus de variations
+    elif any(word in question_lower for word in ['récent', 'recent', 'nouveau', 'nouveaux', 'dernier', 'derniers', 'récemment', 'récentes']):
         return """
         PREFIX webprotege: <http://webprotege.stanford.edu/>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -438,8 +459,49 @@ def handle_assignment_questions(question_lower):
         LIMIT 10
         """
     
-    # Patterns pour les statistiques
-    elif any(word in question_lower for word in ['combien', 'nombre', 'total', 'statistique', 'stats', 'répartition', 'bilan']):
+    # Patterns pour les dates spécifiques
+    elif any(word in question_lower for word in ['aujourd\'hui', 'today', 'ce jour', 'maintenant']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?assignment ?label ?volunteer ?event ?startDate ?status ?rating
+        WHERE {
+            ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
+            ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate .
+            FILTER (xsd:date(?startDate) = xsd:date(NOW()))
+            
+            OPTIONAL { ?assignment rdfs:label ?label . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBqttmTqH5uyTK64wj0hDiD> ?event . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
+        }
+        ORDER BY ?startDate
+        """
+    
+    elif any(word in question_lower for word in ['cette semaine', 'this week', 'semaine actuelle']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?assignment ?label ?volunteer ?event ?startDate ?status ?rating
+        WHERE {
+            ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
+            ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate .
+            FILTER (?startDate >= NOW() && ?startDate <= (NOW() + "P7D"^^xsd:duration))
+            
+            OPTIONAL { ?assignment rdfs:label ?label . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBqttmTqH5uyTK64wj0hDiD> ?event . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
+        }
+        ORDER BY ?startDate
+        """
+    
+    # Patterns pour les statistiques - Plus détaillées
+    elif any(word in question_lower for word in ['combien', 'nombre', 'total', 'statistique', 'stats', 'répartition', 'bilan', 'compte', 'quantité']):
         return """
         PREFIX webprotege: <http://webprotege.stanford.edu/>
         
@@ -447,26 +509,33 @@ def handle_assignment_questions(question_lower):
             (COUNT(?assignment) as ?total)
             (COUNT(?approved) as ?approved_count)
             (COUNT(?rejected) as ?rejected_count)
+            (COUNT(?high_rated) as ?high_rated_count)
             (AVG(?rating) as ?average_rating)
+            (MAX(?rating) as ?max_rating)
+            (MIN(?rating) as ?min_rating)
         WHERE {
             ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
             
             OPTIONAL { 
                 ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
-                FILTER(REGEX(?status, "approuvé", "i"))
+                FILTER(REGEX(?status, "approuvé|approved|validé|accepté|confirmé", "i"))
                 BIND(?assignment as ?approved)
             }
             OPTIONAL { 
                 ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
-                FILTER(REGEX(?status, "non approuvé|rejeté", "i"))
+                FILTER(REGEX(?status, "non approuvé|rejeté|rejected|refusé|décliné|annulé", "i"))
                 BIND(?assignment as ?rejected)
             }
-            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
+            OPTIONAL { 
+                ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating .
+                FILTER(?rating >= 4)
+                BIND(?assignment as ?high_rated)
+            }
         }
         """
     
-    # Patterns pour les volontaires spécifiques
-    elif any(word in question_lower for word in ['volontaire', 'volunteer', 'de', 'par']):
+    # Patterns pour les volontaires spécifiques - Plus intelligents
+    elif any(word in question_lower for word in ['volontaire', 'volunteer', 'de', 'par', 'assigné à', 'assigné par']):
         return """
         PREFIX webprotege: <http://webprotege.stanford.edu/>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -485,8 +554,8 @@ def handle_assignment_questions(question_lower):
         ORDER BY ?volunteer ?startDate DESC
         """
     
-    # Patterns pour les événements
-    elif any(word in question_lower for word in ['événement', 'event', 'évènement']):
+    # Patterns pour les événements - Plus intelligents
+    elif any(word in question_lower for word in ['événement', 'event', 'évènement', 'activité', 'mission', 'tâche']):
         return """
         PREFIX webprotege: <http://webprotege.stanford.edu/>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -503,6 +572,77 @@ def handle_assignment_questions(question_lower):
             OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
         }
         ORDER BY ?event ?startDate DESC
+        """
+    
+    # Patterns pour les performances
+    elif any(word in question_lower for word in ['performance', 'performant', 'performants', 'meilleur', 'meilleurs', 'excellent', 'excellents']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?assignment ?label ?volunteer ?event ?startDate ?status ?rating
+        WHERE {
+            ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
+            ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating .
+            FILTER(?rating >= 4)
+            
+            OPTIONAL { ?assignment rdfs:label ?label . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBqttmTqH5uyTK64wj0hDiD> ?event . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status . }
+        }
+        ORDER BY DESC(?rating)
+        """
+    
+    # Patterns pour les problèmes
+    elif any(word in question_lower for word in ['problème', 'problèmes', 'difficulté', 'difficultés', 'mauvais', 'mauvaise', 'faible', 'faibles']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?assignment ?label ?volunteer ?event ?startDate ?status ?rating
+        WHERE {
+            ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
+            {
+                ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating .
+                FILTER(?rating <= 2)
+            }
+            UNION
+            {
+                ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
+                FILTER(REGEX(?status, "non approuvé|rejeté|rejected|refusé|décliné|annulé", "i"))
+            }
+            
+            OPTIONAL { ?assignment rdfs:label ?label . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBqttmTqH5uyTK64wj0hDiD> ?event . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
+        }
+        ORDER BY ?rating ASC
+        """
+    
+    # Patterns pour les assignements en attente
+    elif any(word in question_lower for word in ['attente', 'pending', 'en cours', 'en attente', 'en attente de']):
+        return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        
+        SELECT ?assignment ?label ?volunteer ?event ?startDate ?status ?rating
+        WHERE {
+            ?assignment a <http://webprotege.stanford.edu/Rj2A7xNWLfpNcbE4HJMKqN> .
+            ?assignment <http://webprotege.stanford.edu/RDT3XEARggTy1BIBKDXXrmx> ?status .
+            FILTER(REGEX(?status, "en attente|pending|en cours|en attente de", "i"))
+            
+            OPTIONAL { ?assignment rdfs:label ?label . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBNk0vvVsRh8FjaWPGT0XCO> ?volunteer . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RBqttmTqH5uyTK64wj0hDiD> ?event . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RD3Wor03BEPInfzUaMNVPC7> ?startDate . }
+            OPTIONAL { ?assignment <http://webprotege.stanford.edu/RRatingAssignment> ?rating . }
+        }
+        ORDER BY ?startDate
         """
     
     # Requête générale pour tous les assignements
