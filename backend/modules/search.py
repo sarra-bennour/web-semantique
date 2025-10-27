@@ -1,506 +1,137 @@
 from flask import Blueprint, jsonify, request
 from sparql_utils import sparql_utils
-import re
-from datetime import datetime, timedelta
+from modules.taln_service import TALNService
+from modules.gemini_sparql_service import GeminiSPARQLTransformer
 
 search_bp = Blueprint('search', __name__)
 
+# Initialize services
+taln_service = TALNService()
+gemini_transformer = GeminiSPARQLTransformer()
+
 @search_bp.route('/search', methods=['POST'])
 def semantic_search():
-    """Recherche sémantique - transformation question en SPARQL"""
+    """Recherche sémantique - TALN → Gemini → SPARQL pipeline"""
     try:
         data = request.get_json(force=True)
         question = data.get('question', '').lower()
+
+        question = data.get('question', '').strip()
         
-        # Transformation des questions en requêtes SPARQL
-        sparql_query = transform_question_to_sparql_combined(question)
+        if not question:
+            return jsonify({"error": "Question vide"}), 400
+        
+        print(f"🔍 Processing question: {question}")
+        
+        # Step 1: TALN Analysis - Extract entities, relationships, intent
+        print("📝 Step 1: TALN Analysis...")
+        taln_analysis = taln_service.analyze_question(question)
+        print(f"✅ TALN Analysis completed. Entities: {len(taln_analysis.get('entities', []))}")
+        
+        # Step 2: Gemini SPARQL Generation - Generate query from TALN analysis
+        print("🤖 Step 2: Gemini SPARQL Generation...")
+        sparql_query = gemini_transformer.transform_taln_analysis_to_sparql(taln_analysis)
+        print(f"✅ SPARQL Query generated: {len(sparql_query)} characters")
         
         if not sparql_query:
-            return jsonify({"error": "Question non reconnue"}), 400
+            return jsonify({"error": "Impossible de générer une requête SPARQL"}), 400
         
-        # Exécution de la requête
+        # Step 3: Execute SPARQL Query
+        print("⚡ Step 3: Executing SPARQL Query...")
+        results = sparql_utils.execute_query(sparql_query)
+        print(f"✅ Query executed. Results: {len(results) if results else 0} rows")
+        
+        # Return comprehensive response
+        return jsonify({
+            "question": question,
+            "taln_analysis": taln_analysis,
+            "sparql_query": sparql_query,
+            "results": results,
+            "pipeline_info": {
+                "taln_confidence": taln_analysis.get('confidence_scores', {}).get('overall_confidence', 0.0),
+                "entities_detected": len(taln_analysis.get('entities', [])),
+                "intent_classified": taln_analysis.get('intent', {}).get('primary_intent', 'unknown'),
+                "query_length": len(sparql_query),
+                "results_count": len(results) if results else 0
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Error in semantic search pipeline: {str(e)}")
+        return jsonify({"error": f"Erreur dans le pipeline de recherche: {str(e)}"}), 500
+
+@search_bp.route('/search/ai', methods=['POST'])
+def ai_search():
+    """Recherche avec IA - Version alternative utilisant directement Gemini"""
+    try:
+        data = request.get_json(force=True)
+        question = data.get('question', '').strip()
+        
+        if not question:
+            return jsonify({"error": "Question vide"}), 400
+        
+        print(f"🤖 AI Search processing: {question}")
+        
+        # Direct Gemini transformation (fallback method)
+        sparql_query = gemini_transformer.transform_question_to_sparql(question)
+        
+        if not sparql_query:
+            return jsonify({"error": "Impossible de générer une requête SPARQL"}), 400
+        
+        # Execute query
         results = sparql_utils.execute_query(sparql_query)
         
         return jsonify({
             "question": question,
             "sparql_query": sparql_query,
-            "results": results
+            "results": results,
+            "method": "direct_gemini"
         })
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"❌ Error in AI search: {str(e)}")
+        return jsonify({"error": f"Erreur dans la recherche IA: {str(e)}"}), 500
 
-def extract_city_from_question(question_lower):
-    """Extract city name from question - SIMPLIFIED VERSION"""
-    # List of known cities from your RDF
-    known_cities = ['paris', 'london', 'new york', 'boston', 'chicago', 'san francisco', 'tunis']
-    
-    # Check for city patterns
-    patterns = [
-        r'à (\w+(?:\s+\w+)*)',
-        r'in (\w+(?:\s+\w+)*)',
-        r'ville de (\w+(?:\s+\w+)*)',
-        r'city of (\w+(?:\s+\w+)*)',
-        r'au (\w+(?:\s+\w+)*)'
-    ]
-    
-    for pattern in patterns:
-        match = re.search(pattern, question_lower)
-        if match:
-            potential_city = match.group(1).strip().lower()
-            if potential_city in known_cities:
-                return potential_city
-    
-    # Direct city mention
-    for city in known_cities:
-        if city in question_lower:
-            return city
-    
-    return None
-
-def extract_date_from_question(question_lower):
-    """Extract date information from question"""
-    # Today
-    if any(word in question_lower for word in ['aujourd\'hui', 'today', 'ce jour']):
-        return 'today'
-    
-    # Tomorrow
-    elif any(word in question_lower for word in ['demain', 'tomorrow']):
-        return 'tomorrow'
-    
-    # This week
-    elif any(word in question_lower for word in ['cette semaine', 'this week', 'semaine actuelle']):
-        return 'this_week'
-    
-    # This weekend
-    elif any(word in question_lower for word in ['weekend', 'week-end', 'fin de semaine']):
-        return 'weekend'
-    
-    # This month
-    elif any(word in question_lower for word in ['ce mois', 'this month', 'mois actuel']):
-        return 'this_month'
-    
-    # Future events
-    elif any(word in question_lower for word in ['à venir', 'futur', 'future', 'upcoming', 'prochain']):
-        return 'future'
-    
-    # Past events
-    elif any(word in question_lower for word in ['passé', 'past', 'ancien', 'previous', 'terminé']):
-        return 'past'
-    
-    return None
-
-def transform_question_to_sparql_combined(question):
-    """Transforme une question en français en requête SPARQL - Version combinée"""
-    question_lower = question.lower()
-    
-    # QUESTIONS SUR LES CAMPAGNES
-    if any(word in question_lower for word in ["campagne", "campaign"]):
-        if any(word in question_lower for word in ["actif", "active", "en cours", "current"]):
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            
-            SELECT ?name ?description ?status ?startDate ?endDate ?goal ?type
-            WHERE {
-                {
-                    ?campaign a eco:Campaign .
-                }
-                UNION
-                {
-                    ?subClass rdfs:subClassOf* eco:Campaign .
-                    ?campaign a ?subClass .
-                }
-                ?campaign eco:campaignName ?name .
-                ?campaign eco:campaignStatus ?status .
-                FILTER(LCASE(STR(?status)) = "active" || LCASE(STR(?status)) = "actif" || LCASE(STR(?status)) = "en cours")
-                OPTIONAL { ?campaign eco:campaignDescription ?description }
-                OPTIONAL { ?campaign eco:startDate ?startDate }
-                OPTIONAL { ?campaign eco:endDate ?endDate }
-                OPTIONAL { ?campaign eco:goal ?goal }
-                OPTIONAL { 
-                    ?campaign a ?type .
-                    FILTER(?type != eco:Campaign)
-                }
-            }
-            ORDER BY ?name
-            """
+@search_bp.route('/search/hybrid', methods=['POST'])
+def hybrid_search():
+    """Recherche hybride - Combine TALN + Gemini + fallback"""
+    try:
+        data = request.get_json(force=True)
+        question = data.get('question', '').strip()
         
-        elif "nettoyage" in question_lower or "cleanup" in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            
-            SELECT ?name ?description ?status ?startDate ?endDate ?goal
-            WHERE {
-                ?campaign a eco:CleanupCampaign .
-                ?campaign eco:campaignName ?name .
-                OPTIONAL { ?campaign eco:campaignDescription ?description }
-                OPTIONAL { ?campaign eco:campaignStatus ?status }
-                OPTIONAL { ?campaign eco:startDate ?startDate }
-                OPTIONAL { ?campaign eco:endDate ?endDate }
-                OPTIONAL { ?campaign eco:goal ?goal }
-            }
-            ORDER BY ?name
-            """
+        if not question:
+            return jsonify({"error": "Question vide"}), 400
         
-        elif "sensibilisation" in question_lower or "awareness" in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            
-            SELECT ?name ?description ?status ?startDate ?endDate ?goal
-            WHERE {
-                ?campaign a eco:AwarenessCampaign .
-                ?campaign eco:campaignName ?name .
-                OPTIONAL { ?campaign eco:campaignDescription ?description }
-                OPTIONAL { ?campaign eco:campaignStatus ?status }
-                OPTIONAL { ?campaign eco:startDate ?startDate }
-                OPTIONAL { ?campaign eco:endDate ?endDate }
-                OPTIONAL { ?campaign eco:goal ?goal }
-            }
-            ORDER BY ?name
-            """
+        print(f"🔄 Hybrid Search processing: {question}")
         
-        elif "financement" in question_lower or "funding" in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            
-            SELECT ?name ?description ?status ?startDate ?endDate ?goal ?targetAmount ?fundsRaised
-            WHERE {
-                ?campaign a eco:FundingCampaign .
-                ?campaign eco:campaignName ?name .
-                OPTIONAL { ?campaign eco:campaignDescription ?description }
-                OPTIONAL { ?campaign eco:campaignStatus ?status }
-                OPTIONAL { ?campaign eco:startDate ?startDate }
-                OPTIONAL { ?campaign eco:endDate ?endDate }
-                OPTIONAL { ?campaign eco:goal ?goal }
-                OPTIONAL { ?campaign eco:targetAmount ?targetAmount }
-                OPTIONAL { ?campaign eco:fundsRaised ?fundsRaised }
-            }
-            ORDER BY ?name
-            """
+        # Try TALN + Gemini first
+        try:
+            taln_analysis = taln_service.analyze_question(question)
+            sparql_query = gemini_transformer.transform_taln_analysis_to_sparql(taln_analysis)
+            method_used = "taln_gemini"
+        except Exception as e:
+            print(f"TALN+Gemini failed, falling back to direct Gemini: {e}")
+            sparql_query = gemini_transformer.transform_question_to_sparql(question)
+            method_used = "direct_gemini"
+            taln_analysis = None
         
-        elif "événement" in question_lower or "event" in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            
-            SELECT ?name ?description ?status ?startDate ?endDate ?goal ?targetParticipants
-            WHERE {
-                ?campaign a eco:EventCampaign .
-                ?campaign eco:campaignName ?name .
-                OPTIONAL { ?campaign eco:campaignDescription ?description }
-                OPTIONAL { ?campaign eco:campaignStatus ?status }
-                OPTIONAL { ?campaign eco:startDate ?startDate }
-                OPTIONAL { ?campaign eco:endDate ?endDate }
-                OPTIONAL { ?campaign eco:goal ?goal }
-                OPTIONAL { ?campaign eco:targetParticipants ?targetParticipants }
-            }
-            ORDER BY ?name
-            """
+        if not sparql_query:
+            return jsonify({"error": "Impossible de générer une requête SPARQL"}), 400
         
-        else:
-            # Requête générale pour les campagnes
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            
-            SELECT ?name ?description ?status ?startDate ?endDate ?goal ?type
-            WHERE {
-                {
-                    ?campaign a eco:Campaign .
-                }
-                UNION
-                {
-                    ?subClass rdfs:subClassOf* eco:Campaign .
-                    ?campaign a ?subClass .
-                }
-                ?campaign eco:campaignName ?name .
-                OPTIONAL { ?campaign eco:campaignDescription ?description }
-                OPTIONAL { ?campaign eco:campaignStatus ?status }
-                OPTIONAL { ?campaign eco:startDate ?startDate }
-                OPTIONAL { ?campaign eco:endDate ?endDate }
-                OPTIONAL { ?campaign eco:goal ?goal }
-                OPTIONAL { 
-                    ?campaign a ?type .
-                    FILTER(?type != eco:Campaign)
-                }
-            }
-            ORDER BY ?name
-            LIMIT 20
-            """
-    
-    # QUESTIONS SUR LES RESSOURCES
-    elif any(word in question_lower for word in ["ressource", "resource"]):
-        if "humaine" in question_lower or "human" in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            
-            SELECT ?name ?description ?category ?quantity ?unitCost ?skillLevel
-            WHERE {
-                ?resource a eco:HumanResource .
-                ?resource eco:resourceName ?name .
-                OPTIONAL { ?resource eco:resourceDescription ?description }
-                OPTIONAL { ?resource eco:resourceCategory ?category }
-                OPTIONAL { ?resource eco:quantityAvailable ?quantity }
-                OPTIONAL { ?resource eco:unitCost ?unitCost }
-                OPTIONAL { ?resource eco:skillLevel ?skillLevel }
-            }
-            ORDER BY ?name
-            """
+        # Execute query
+        results = sparql_utils.execute_query(sparql_query)
         
-        elif "matériel" in question_lower or "material" in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            
-            SELECT ?name ?description ?category ?quantity ?unitCost ?materialType
-            WHERE {
-                ?resource a eco:MaterialResource .
-                ?resource eco:resourceName ?name .
-                OPTIONAL { ?resource eco:resourceDescription ?description }
-                OPTIONAL { ?resource eco:resourceCategory ?category }
-                OPTIONAL { ?resource eco:quantityAvailable ?quantity }
-                OPTIONAL { ?resource eco:unitCost ?unitCost }
-                OPTIONAL { ?resource eco:materialType ?materialType }
-            }
-            ORDER BY ?name
-            """
-        
-        elif "équipement" in question_lower or "equipment" in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            
-            SELECT ?name ?description ?category ?quantity ?unitCost ?equipmentType
-            WHERE {
-                ?resource a eco:EquipmentResource .
-                ?resource eco:resourceName ?name .
-                OPTIONAL { ?resource eco:resourceDescription ?description }
-                OPTIONAL { ?resource eco:resourceCategory ?category }
-                OPTIONAL { ?resource eco:quantityAvailable ?quantity }
-                OPTIONAL { ?resource eco:unitCost ?unitCost }
-                OPTIONAL { ?resource eco:equipmentType ?equipmentType }
-            }
-            ORDER BY ?name
-            """
-        
-        elif "financière" in question_lower or "financial" in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            
-            SELECT ?name ?description ?category ?quantity ?unitCost ?currency
-            WHERE {
-                ?resource a eco:FinancialResource .
-                ?resource eco:resourceName ?name .
-                OPTIONAL { ?resource eco:resourceDescription ?description }
-                OPTIONAL { ?resource eco:resourceCategory ?category }
-                OPTIONAL { ?resource eco:quantityAvailable ?quantity }
-                OPTIONAL { ?resource eco:unitCost ?unitCost }
-                OPTIONAL { ?resource eco:currency ?currency }
-            }
-            ORDER BY ?name
-            """
-        
-        elif "numérique" in question_lower or "digital" in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            
-            SELECT ?name ?description ?category ?quantity ?unitCost
-            WHERE {
-                ?resource a eco:DigitalResource .
-                ?resource eco:resourceName ?name .
-                OPTIONAL { ?resource eco:resourceDescription ?description }
-                OPTIONAL { ?resource eco:resourceCategory ?category }
-                OPTIONAL { ?resource eco:quantityAvailable ?quantity }
-                OPTIONAL { ?resource eco:unitCost ?unitCost }
-            }
-            ORDER BY ?name
-            """
-        
-        else:
-            # Requête générale pour les ressources
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            
-            SELECT ?name ?description ?category ?quantity ?unitCost ?type
-            WHERE {
-                {
-                    ?resource a eco:Resource .
-                }
-                UNION
-                {
-                    ?subClass rdfs:subClassOf* eco:Resource .
-                    ?resource a ?subClass .
-                }
-                ?resource eco:resourceName ?name .
-                OPTIONAL { ?resource eco:resourceDescription ?description }
-                OPTIONAL { ?resource eco:resourceCategory ?category }
-                OPTIONAL { ?resource eco:quantityAvailable ?quantity }
-                OPTIONAL { ?resource eco:unitCost ?unitCost }
-                OPTIONAL { 
-                    ?resource a ?type .
-                    FILTER(?type != eco:Resource)
-                }
-            }
-            ORDER BY ?name
-            LIMIT 20
-            """
-    
-    # QUESTIONS SUR LES UTILISATEURS
-    elif "utilisateur" in question_lower or "user" in question_lower:
-        return """
-        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-        
-        SELECT ?firstName ?lastName ?email ?role ?registrationDate
-        WHERE {
-            ?user a eco:User .
-            ?user eco:firstName ?firstName .
-            OPTIONAL { ?user eco:lastName ?lastName }
-            OPTIONAL { ?user eco:email ?email }
-            OPTIONAL { ?user eco:role ?role }
-            OPTIONAL { ?user eco:registrationDate ?registrationDate }
+        response = {
+            "question": question,
+            "sparql_query": sparql_query,
+            "results": results,
+            "method": method_used
         }
-        ORDER BY ?firstName
-        LIMIT 20
-        """
-    
-    # QUESTIONS SUR LES RÉSERVATIONS (priorité sur les événements)
-    elif any(word in question_lower for word in ['réservation', 'reservation', 'réserver', 'booking']) or 'réservation' in question_lower:
-        if 'confirmé' in question_lower or 'confirmed' in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            
-            SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userEmail
-            WHERE {
-                ?reservation a eco:Reservation .
-                ?reservation webprotege:R9wdyKGFoajnFCFN4oqnwHr ?status .
-                FILTER(LCASE(STR(?status)) = "confirmed")
-                OPTIONAL { ?reservation webprotege:R7QgAmvOpBSpwRmRrDZL8VE ?seatNumber . }
-                OPTIONAL { 
-                    ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
-                    ?event eco:eventTitle ?eventTitle .
-                }
-                OPTIONAL { 
-                    ?reservation eco:belongsToUser ?user .
-                    ?user eco:firstName ?userName .
-                    OPTIONAL { ?user eco:email ?userEmail . }
-                }
-            }
-            ORDER BY ?reservation
-            """
-        elif 'attente' in question_lower or 'pending' in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            
-            SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userEmail
-            WHERE {
-                ?reservation a eco:Reservation .
-                ?reservation webprotege:R9wdyKGFoajnFCFN4oqnwHr ?status .
-                FILTER(LCASE(STR(?status)) = "pending")
-                OPTIONAL { ?reservation webprotege:R7QgAmvOpBSpwRmRrDZL8VE ?seatNumber . }
-                OPTIONAL { 
-                    ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
-                    ?event eco:eventTitle ?eventTitle .
-                }
-                OPTIONAL { 
-                    ?reservation eco:belongsToUser ?user .
-                    ?user eco:firstName ?userName .
-                    OPTIONAL { ?user eco:email ?userEmail . }
-                }
-            }
-            ORDER BY ?reservation
-            """
-        elif 'annulé' in question_lower or 'cancelled' in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            
-            SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userEmail
-            WHERE {
-                ?reservation a eco:Reservation .
-                ?reservation webprotege:R9wdyKGFoajnFCFN4oqnwHr ?status .
-                FILTER(LCASE(STR(?status)) = "cancelled")
-                OPTIONAL { ?reservation webprotege:R7QgAmvOpBSpwRmRrDZL8VE ?seatNumber . }
-                OPTIONAL { 
-                    ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
-                    ?event eco:eventTitle ?eventTitle .
-                }
-                OPTIONAL { 
-                    ?reservation eco:belongsToUser ?user .
-                    ?user eco:firstName ?userName .
-                    OPTIONAL { ?user eco:email ?userEmail . }
-                }
-            }
-            ORDER BY ?reservation
-            """
-        elif 'par événement' in question_lower or 'par event' in question_lower or 'groupé' in question_lower:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            
-            SELECT ?eventTitle (COUNT(?reservation) as ?reservationCount) ?eventDate ?locationName
-            WHERE {
-                ?reservation a eco:Reservation .
-                ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
-                ?event eco:eventTitle ?eventTitle .
-                OPTIONAL { ?event eco:eventDate ?eventDate . }
-                OPTIONAL { 
-                    ?event eco:isLocatedAt ?location .
-                    ?location eco:locationName ?locationName .
-                }
-            }
-            GROUP BY ?eventTitle ?eventDate ?locationName
-            ORDER BY ?eventTitle
-            """
-        else:
-            return """
-            PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-            PREFIX webprotege: <http://webprotege.stanford.edu/>
-            
-            SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userEmail
-            WHERE {
-                ?reservation a eco:Reservation .
-                OPTIONAL { ?reservation webprotege:R7QgAmvOpBSpwRmRrDZL8VE ?seatNumber . }
-                OPTIONAL { ?reservation webprotege:R9wdyKGFoajnFCFN4oqnwHr ?status . }
-                OPTIONAL { 
-                    ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
-                    ?event eco:eventTitle ?eventTitle .
-                }
-                OPTIONAL { 
-                    ?reservation eco:belongsToUser ?user .
-                    ?user eco:firstName ?userName .
-                    OPTIONAL { ?user eco:email ?userEmail . }
-                }
-            }
-            ORDER BY ?reservation
-            """
-
-    # QUESTIONS SUR LES ÉVÉNEMENTS - COMPREHENSIVE VERSION
-    elif any(word in question_lower for word in ['événement', 'event', 'évènement', 'evenement', 'événements', 'events']):
-        city_name = extract_city_from_question(question_lower)
-        date_filter = extract_date_from_question(question_lower)
         
-        # Build city filter if city is mentioned
-        city_filter = ""
-        if city_name:
-            city_filter = f'FILTER (LCASE(STR(?city)) = "{city_name.lower()}" || CONTAINS(LCASE(STR(?city)), "{city_name.lower()}"))'
+        if taln_analysis:
+            response["taln_analysis"] = taln_analysis
         
-        # Build date filter based on time period
-        date_condition = ""
-        if date_filter == 'today':
-            date_condition = 'FILTER (xsd:date(?date) = xsd:date(NOW()))'
-        elif date_filter == 'tomorrow':
-            date_condition = 'FILTER (xsd:date(?date) = xsd:date(NOW() + "P1D"^^xsd:duration))'
-        elif date_filter == 'this_week':
-            date_condition = 'FILTER (?date >= NOW() && ?date <= (NOW() + "P7D"^^xsd:duration))'
-        elif date_filter == 'weekend':
-            date_condition = 'FILTER (?date >= NOW() && ?date <= (NOW() + "P7D"^^xsd:duration)) FILTER (DAY(?date) IN (6, 7))'
-        elif date_filter == 'this_month':
-            date_condition = 'FILTER (?date >= NOW() && ?date <= (NOW() + "P30D"^^xsd:duration))'
-        elif date_filter == 'future':
-            date_condition = 'FILTER (?date >= NOW())'
-        elif date_filter == 'past':
-            date_condition = 'FILTER (?date < NOW())'
+        return jsonify(response)
         
         # TOUS LES ÉVÉNEMENTS (avec filtres optionnels)
         if any(word in question_lower for word in ['tous', 'all', 'every', 'liste complète', 'complete list']):
@@ -1357,3 +988,6 @@ def transform_question_to_sparql_combined(question):
     ORDER BY ?type ?name
     LIMIT 20
     """
+    except Exception as e:
+        print(f"❌ Error in hybrid search: {str(e)}")
+        return jsonify({"error": f"Erreur dans la recherche hybride: {str(e)}"}), 500

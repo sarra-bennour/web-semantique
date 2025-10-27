@@ -55,6 +55,7 @@ const SemanticSearch = () => {
     ],
     "Volontaires": [
     "Quels sont les volontaires ?",
+
     "Quels volontaires sont actifs ?",
     "Quelles sont les compétences des volontaires ?",
     "Quels volontaires ont de l'expérience ?",
@@ -92,6 +93,18 @@ const SemanticSearch = () => {
     try {
       const response = await searchAPI.semanticSearch(q);
       setResults(response.data);
+      
+      // Log TALN analysis for debugging
+      if (response.data.taln_analysis) {
+        console.log('🔍 TALN Analysis:', response.data.taln_analysis);
+        console.log('📊 Pipeline Info:', response.data.pipeline_info);
+      }
+      
+      // DEBUG: Voir la structure complète de la réponse
+      console.log('🔍 FULL RESPONSE STRUCTURE:', response.data);
+      console.log('📊 Results key:', response.data.results);
+      console.log('🔎 Results type:', typeof response.data.results);
+      
     } catch (error) {
       console.error('Erreur lors de la recherche:', error);
       setResults({ error: 'Erreur lors de la recherche sémantique' });
@@ -117,29 +130,37 @@ const SemanticSearch = () => {
       return null;
     }
 
+
     // Résultat de comptage total campagnes
+
+    console.log('🔢 COUNT RESULTS DATA:', resultsData[0]);
+
+    // Résultat de comptage total campagnes (format string direct)
+
     if (resultsData.length === 1 && resultsData[0].hasOwnProperty('totalCampaigns')) {
+      const count = resultsData[0].totalCampaigns;
       return (
         <div className="count-result">
-          <h4>Nombre total de campagnes: {resultsData[0].totalCampaigns.value}</h4>
+          <h4>🎯 Nombre total de campagnes: <span className="count-number">{count}</span></h4>
         </div>
       );
     }
     
-    // Résultat de comptage total ressources
+    // Résultat de comptage total ressources (format string direct)
     if (resultsData.length === 1 && resultsData[0].hasOwnProperty('totalResources')) {
+      const count = resultsData[0].totalResources;
       return (
         <div className="count-result">
-          <h4>Nombre total de ressources: {resultsData[0].totalResources.value}</h4>
+          <h4>🎯 Nombre total de ressources: <span className="count-number">{count}</span></h4>
         </div>
       );
     }
     
-    // Résultat de comptage par type/catégorie
+    // Résultat de comptage par type/catégorie (format string direct)
     if (resultsData.some(row => row.hasOwnProperty('count'))) {
       return (
         <div className="count-results">
-          <h4>Répartition:</h4>
+          <h4>📊 Répartition:</h4>
           <table className="results-table">
             <thead>
               <tr>
@@ -148,15 +169,17 @@ const SemanticSearch = () => {
               </tr>
             </thead>
             <tbody>
-              {resultsData.map((row, index) => (
-                <tr key={index}>
-                  <td>
-                    {row.type ? row.type.value : 
-                     row.category ? row.category.value : 'Non catégorisé'}
-                  </td>
-                  <td>{row.count.value}</td>
-                </tr>
-              ))}
+              {resultsData.map((row, index) => {
+                const type = row.type || row.category || 'Non catégorisé';
+                const count = row.count;
+                
+                return (
+                  <tr key={index}>
+                    <td>{type}</td>
+                    <td className="count-number">{count}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -173,17 +196,61 @@ const SemanticSearch = () => {
       return <div className="error">Erreur: {results.error}</div>;
     }
 
-    // Handle both response formats
-    const hasBindings = results.results && results.results.results && results.results.results.bindings;
-    const hasArrayResults = results.results && Array.isArray(results.results);
-    const hasDirectResults = Array.isArray(results.results);
-    
-    const resultsData = hasBindings ? results.results.results.bindings : 
-                         hasArrayResults ? results.results :
-                         hasDirectResults ? results.results : 
-                         Array.isArray(results.results) ? results.results : [];
+  // Handle both response formats
 
-    const questionText = results.question || results.original_question;
+    // DEBUG: Afficher la structure complète
+    console.log('🔍 RENDERING RESULTS:', results);
+
+    // Extraire les données des résultats selon différents formats possibles
+    let resultsData = [];
+    
+    // Format 1: Standard SPARQL (results.bindings)
+    if (results.results && results.results.results && results.results.results.bindings) {
+      resultsData = results.results.results.bindings;
+      console.log('📊 Using format 1: results.results.results.bindings');
+    }
+    // Format 2: Tableau direct dans results
+    else if (Array.isArray(results.results)) {
+      resultsData = results.results;
+      console.log('📊 Using format 2: Array results.results');
+    }
+    // Format 3: Données directes
+    else if (Array.isArray(results)) {
+      resultsData = results;
+      console.log('📊 Using format 3: Array results');
+    }
+    // Format 4: Autre structure
+    else if (results.results && Array.isArray(results.results.bindings)) {
+      resultsData = results.results.bindings;
+      console.log('📊 Using format 4: results.results.bindings');
+    }
+    // Format 5: Structure simple
+    else if (results.bindings && Array.isArray(results.bindings)) {
+      resultsData = results.bindings;
+      console.log('📊 Using format 5: results.bindings');
+    }
+    // Format 6: Résultats directs sans nesting
+    else if (results.results && Array.isArray(results.results)) {
+      resultsData = results.results;
+      console.log('📊 Using format 6: results.results (direct array)');
+    }
+    else {
+      console.log('❌ Unknown results format:', results);
+      // Afficher les données brutes pour debug
+      return (
+        <div className="results">
+          <h3>Résultats (Format Debug):</h3>
+          <div className="debug-info">
+            <p><strong>Structure des données reçues:</strong></p>
+            <pre>{JSON.stringify(results, null, 2)}</pre>
+          </div>
+        </div>
+      );
+    }
+
+    console.log('📈 Results data to display:', resultsData);
+
+    const questionText = results.question || results.original_question || question;
     const sparqlQuery = results.sparql_query || results.generated_sparql;
 
     // Vérifier d'abord si c'est un résultat de comptage
@@ -208,6 +275,58 @@ const SemanticSearch = () => {
       <div className="results">
         <h3>Résultats pour: "{questionText}"</h3>
         
+        {/* TALN Analysis Information */}
+        {results.taln_analysis && (
+          <div className="taln-analysis">
+            <h4>🔍 Analyse TALN</h4>
+            <div className="analysis-details">
+              <div className="analysis-section">
+                <strong>Entités détectées:</strong>
+                <ul>
+                  {results.taln_analysis.entities.map((entity, index) => (
+                    <li key={index}>
+                      {entity.text} ({entity.ontology_class}) - Confiance: {Math.round(entity.confidence * 100)}%
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              
+              <div className="analysis-section">
+                <strong>Intention:</strong> {results.taln_analysis.intent.primary_intent} ({results.taln_analysis.intent.query_type})
+              </div>
+              
+              {results.taln_analysis.temporal_info.relative_time && (
+                <div className="analysis-section">
+                  <strong>Temps:</strong> {results.taln_analysis.temporal_info.relative_time}
+                </div>
+              )}
+              
+              {results.taln_analysis.location_info.locations.length > 0 && (
+                <div className="analysis-section">
+                  <strong>Lieux:</strong> {results.taln_analysis.location_info.locations.join(', ')}
+                </div>
+              )}
+              
+              <div className="analysis-section">
+                <strong>Confiance globale:</strong> {Math.round(results.taln_analysis.confidence_scores.overall_confidence * 100)}%
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Pipeline Information */}
+        {results.pipeline_info && (
+          <div className="pipeline-info">
+            <h4>📊 Informations du Pipeline</h4>
+            <div className="pipeline-stats">
+              <span>Entités: {results.pipeline_info.entities_detected}</span>
+              <span>Intention: {results.pipeline_info.intent_classified}</span>
+              <span>Confiance TALN: {Math.round(results.pipeline_info.taln_confidence * 100)}%</span>
+              <span>Résultats: {results.pipeline_info.results_count}</span>
+            </div>
+          </div>
+        )}
+        
         {sparqlQuery && (
           <div className="sparql-query">
             <strong>Requête SPARQL générée:</strong>
@@ -215,35 +334,10 @@ const SemanticSearch = () => {
           </div>
         )}
         
-        {hasBindings && Array.isArray(resultsData) && resultsData.length > 0 ? (
-          <div className="results-table-container">
-            <table className="results-table">
-              <thead>
-                <tr>
-                  {/* Filter out internal id column 'b' and similar resource keys */}
-                  {Object.keys(resultsData[0]).filter(key => !["b", "resource", "item"].includes(key)).map(key => (
-                    <th key={key}>{key}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {resultsData.map((row, index) => (
-                  <tr key={index}>
-                    {Object.keys(row).filter(key => !["b", "resource", "item"].includes(key)).map((cellKey, cellIndex) => {
-                      const cell = row[cellKey];
-                      const value = cell && cell.value ? String(cell.value) : 'N/A';
-                      return (
-                        <td key={cellIndex}>
-                          {value.length > 50 ? value.substring(0, 50) + '...' : value}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : hasArrayResults && Array.isArray(resultsData) && resultsData.length > 0 ? (
+
+        
+
+        {resultsData && resultsData.length > 0 ? (
           <div className="results-table-container">
             <table className="results-table">
               <thead>
@@ -256,21 +350,33 @@ const SemanticSearch = () => {
               <tbody>
                 {resultsData.map((row, index) => (
                   <tr key={index}>
-                    {Object.keys(row).filter(key => !["b", "resource", "item"].includes(key)).map((k, cellIndex) => (
-                      <td key={cellIndex}>
-                        {String(row[k]).length > 50 
-                          ? String(row[k]).substring(0, 50) + '...' 
-                          : String(row[k])
-                        }
-                      </td>
-                    ))}
+                    {typeof row === 'object' ? (
+                      Object.keys(row).filter(key => !["b", "resource", "item"].includes(key)).map((cellKey, cellIndex) => {
+                        const cell = row[cellKey];
+                        const value = cell && cell.value ? String(cell.value) : (cell !== undefined ? String(cell) : 'N/A');
+                        return (
+                          <td key={cellIndex}>{value.length > 50 ? value.substring(0, 50) + '...' : value}</td>
+                        );
+                      })
+                    ) : (
+                      <td>{String(row)}</td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
+            <p className="results-count">📊 {resultsData.length} résultat(s) trouvé(s)</p>
           </div>
         ) : (
-          <p>Aucun résultat trouvé</p>
+          <div className="no-results">
+            <p>❌ Aucun résultat trouvé pour cette requête</p>
+            <div className="debug-info">
+              <details>
+                <summary>Informations de débogage</summary>
+                <pre>{JSON.stringify(results, null, 2)}</pre>
+              </details>
+            </div>
+          </div>
         )}
       </div>
     );
@@ -332,7 +438,7 @@ const SemanticSearch = () => {
           </div>
         </div>
 
-        {/* Les autres catégories restent inchangées */}
+        {/* Événements */}
         <div className="suggestion-category">
           <h5>📅 Événements</h5>
           <div className="suggestion-buttons">
@@ -349,6 +455,7 @@ const SemanticSearch = () => {
           </div>
         </div>
 
+        {/* Locations */}
         <div className="suggestion-category">
           <h5>🏢 Locations</h5>
           <div className="suggestion-buttons">
@@ -365,6 +472,7 @@ const SemanticSearch = () => {
           </div>
         </div>
 
+        {/* Volontaires */}
         <div className="suggestion-category">
           <h5>👥 Volontaires</h5>
           <div className="suggestion-buttons">
@@ -381,6 +489,24 @@ const SemanticSearch = () => {
           </div>
         </div>
 
+        {/* Assignements */}
+        <div className="suggestion-category">
+          <h5>📋 Assignements</h5>
+          <div className="suggestion-buttons">
+            {categorizedSuggestions.assignements.map((suggestion, index) => (
+              <button
+                key={index}
+                type="button"
+                className="suggestion-button"
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Certificats */}
         <div className="suggestion-category">
           <h5>📝 Blogs</h5>
           <div className="suggestion-buttons">
@@ -429,6 +555,7 @@ const SemanticSearch = () => {
           </div>
         </div>
 
+        {/* Réservations */}
         <div className="suggestion-category">
           <h5>📋 Réservations</h5>
           <div className="suggestion-buttons">
