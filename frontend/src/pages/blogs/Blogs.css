@@ -1,0 +1,154 @@
+/* Blog page styles matching other pages (cards, filters, responsive) */
+.blogs-page {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.blogs-page h2 {
+  color: #2c5530;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 2.2rem;
+}
+
+.blogs-search-form {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  display: grid;
+  grid-template-columns: 1fr 1fr auto auto;
+  gap: 15px;
+  align-items: center;
+}
+
+.search-input {
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #2c5530;
+  box-shadow: 0 0 0 2px rgba(44, 85, 48, 0.1);
+}
+
+.search-button,
+.clear-button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.search-button {
+  background: #2c5530;
+  color: #fff;
+}
+
+.clear-button {
+  background: #dc3545;
+  color: #fff;
+}
+
+.search-button:hover {
+  background: #1f3d23;
+}
+
+.clear-button:hover {
+  background: #c82333;
+}
+
+.search-button:disabled,
+.clear-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.blogs-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.blog-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+  transition: all 0.25s ease;
+  border: 1px solid #eef2f1;
+}
+
+.blog-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+}
+
+.blog-card h3 {
+  color: #2c5530;
+  margin: 0 0 12px 0;
+  font-size: 1.25rem;
+}
+
+.blog-meta {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.blog-date {
+  background: #f8f9fa;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.blog-content {
+  color: #444;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-style: italic;
+}
+
+.no-results {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 1.1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .blogs-search-form {
+    grid-template-columns: 1fr;
+  }
+
+  .blogs-page h2 {
+    font-size: 1.8rem;
+  }
+  
+  .search-button,
+  .clear-button {
+    width: 100%;
+  }
+}
