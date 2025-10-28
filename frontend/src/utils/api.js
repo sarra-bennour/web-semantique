@@ -30,7 +30,8 @@ export const sponsorsAPI = {
 };
 
 export const donationsAPI = {
-  getAll: () => api.get('/donations'),
+  // params: { type: 'FinancialDonation'|'MaterialDonation'|'ServiceDonation', sort: 'newest'|'oldest', limit: number }
+  getAll: (params = {}) => api.get('/donations', { params }),
   getById: (id) => api.get(`/donations/${id}`),
 };
 

@@ -413,16 +413,27 @@ SPARQL QUERY:"""
         except Exception as e:
             print(f"DEBUG: failed to apply donationType defensive fix: {e}")
 
-        # Defensive fix: queries that require '?donation a eco:Donation .' will miss
-        # individuals typed as subclasses (e.g. eco:FinancialDonation). Replace a
-        # direct eco:Donation type check with a UNION over known donation subclasses
-        # so we match instances typed with the subclass only.
+        # Defensive fix: queries that require '?donation a eco:Donation .' or that
+        # ask for a specific donation subclass (e.g. eco:ServiceDonation) can miss
+        # individuals typed in related subclasses. Replace any direct type check
+        # on ?donation for a class whose name ends with 'Donation' with a UNION
+        # covering the known donation classes so instances typed with subclasses
+        # are still matched.
         try:
-            query = re.sub(
-                r"\?donation\s+a\s+eco:Donation\s*\.",
-                "{ ?donation a eco:Donation . } UNION { ?donation a eco:FinancialDonation . } UNION { ?donation a eco:MaterialDonation . } UNION { ?donation a eco:ServiceDonation . }",
-                query
-            )
+            def _donation_union_replacer(m):
+                cls = m.group(1)
+                # Only apply when the matched class name ends with 'Donation'
+                if not cls or not cls.endswith('Donation'):
+                    return m.group(0)
+                unions = [
+                    "{ ?donation a eco:Donation . }",
+                    "{ ?donation a eco:FinancialDonation . }",
+                    "{ ?donation a eco:MaterialDonation . }",
+                    "{ ?donation a eco:ServiceDonation . }"
+                ]
+                return " UNION ".join(unions)
+
+            query = re.sub(r"\?donation\s+a\s+eco:([A-Za-z0-9_]+)\s*\.", _donation_union_replacer, query)
         except Exception as e:
             print(f"DEBUG: failed to apply donation subclass union fix: {e}")
 
