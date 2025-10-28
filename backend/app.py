@@ -1,19 +1,29 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+import logging
 from modules.campRes import api_routes
 import os
 from modules.events import events_bp
 from modules.locations import locations_bp
 from modules.users import users_bp
 from modules.search import search_bp
+from modules.blogs import blogs_bp
+
 from modules.reservations import reservations_bp
 from modules.certifications import certifications_bp
+from modules.sponsors import sponsors_bp
 from modules.volunteers import volunteers_bp
 from modules.assignments import assignments_bp
 from sparql_utils import sparql_utils
+from modules.reviews import reviews_bp
+
 
 app = Flask(__name__)
 CORS(app)
+
+# Basic logger setup to avoid NameError in exception handlers
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Enregistrement des routes
 app.register_blueprint(api_routes, url_prefix='/api')
@@ -23,8 +33,14 @@ app.register_blueprint(users_bp, url_prefix='/api')
 app.register_blueprint(search_bp, url_prefix='/api')
 app.register_blueprint(reservations_bp, url_prefix='/api')
 app.register_blueprint(certifications_bp, url_prefix='/api')
+app.register_blueprint(sponsors_bp, url_prefix='/api')
+
 app.register_blueprint(volunteers_bp, url_prefix='/api')
 app.register_blueprint(assignments_bp, url_prefix='/api')
+
+app.register_blueprint(blogs_bp, url_prefix='/api')
+app.register_blueprint(reviews_bp, url_prefix='/api')
+
 
 
 @app.route('/')
@@ -92,7 +108,9 @@ def test_connection():
         })
         
     except Exception as e:
+        app.logger.error(f"Erreur test Fuseki: {str(e)}")
         logger.error(f"Erreur test Fuseki: {str(e)}")
+
         return jsonify({
             "status": "error",
             "message": f"Erreur Fuseki: {str(e)}"
@@ -195,6 +213,80 @@ def get_ontology_stats():
             "status": "error",
             "message": f"Erreur lors de la récupération des statistiques: {str(e)}"
         }), 500
+
+
+@app.route('/api/ontology/graph', methods=['GET'])
+def get_ontology_graph():
+    """Return nodes and edges for a graph visualization focused on Sponsor/Donation/SponsorshipLevel/Event."""
+    try:
+        # Build a SPARQL query that returns individuals of the main classes and their outgoing properties
+        query = '''
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+                        SELECT DISTINCT ?s ?sLabel ?type ?p ?pLabel ?o ?oLabel WHERE {
+                            ?s a ?type .
+                            # include types that are the class itself or subclasses (captures FinancialDonation, etc.)
+                            ?type rdfs:subClassOf* ?superType .
+                            VALUES ?superType { eco:Sponsor eco:Donation eco:Event }
+          OPTIONAL { ?s rdfs:label ?sLabel }
+          OPTIONAL {
+            ?s ?p ?o .
+                        OPTIONAL { ?p rdfs:label ?pLabel }
+            OPTIONAL { ?o rdfs:label ?oLabel }
+          }
+        }
+        LIMIT 2000
+        '''
+
+        sparql_utils.sparql.setQuery(query)
+        results = sparql_utils.sparql.query().convert()
+
+        nodes = {}
+        edges = []
+
+        for b in results.get('results', {}).get('bindings', []):
+            s = b.get('s', {}).get('value')
+            t = b.get('type', {}).get('value')
+            if not s:
+                continue
+            sLabel = b.get('sLabel', {}).get('value')
+
+            if s not in nodes:
+                nodes[s] = { 'id': s, 'label': sLabel or s.split('#')[-1].split('/')[-1], 'types': [], 'properties': {} }
+            if t and t not in nodes[s]['types']:
+                nodes[s]['types'].append(t)
+
+            # handle p/o
+            if 'p' in b and 'o' in b:
+                pval = b['p']['value']
+                pLabel = b.get('pLabel', {}).get('value')
+                o = b['o']
+                otype = o.get('type')
+                oval = o.get('value')
+                oLabel = b.get('oLabel', {}).get('value')
+                if otype == 'uri':
+                    # ensure target node exists
+                    if oval not in nodes:
+                        nodes[oval] = { 'id': oval, 'label': oLabel or oval.split('#')[-1].split('/')[-1], 'types': [], 'properties': {} }
+                    # skip rdf:type triples as edges
+                    if pval != 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type':
+                        edges.append({ 'source': s, 'target': oval, 'predicate': pval, 'predicateLabel': pLabel or (pval.split('#')[-1].split('/')[-1]) })
+                else:
+                    # literal -> store as property on subject
+                    nodes[s]['properties'].setdefault(pval, []).append(oval)
+
+        # Convert nodes dict to list
+        nodes_list = []
+        for n in nodes.values():
+            nodes_list.append(n)
+
+        return jsonify({ 'nodes': nodes_list, 'edges': edges })
+
+    except Exception as e:
+        app.logger.error(f"Erreur building ontology graph: {str(e)}")
+        return jsonify({ 'error': str(e) }), 500
     
 
 

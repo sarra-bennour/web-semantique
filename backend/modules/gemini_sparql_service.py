@@ -2,6 +2,7 @@ import os
 import google.generativeai as genai
 from dotenv import load_dotenv
 import re
+from typing import Dict, Any
 
 load_dotenv()
 
@@ -13,19 +14,24 @@ class GeminiSPARQLTransformer:
         
         genai.configure(api_key=self.api_key)
         
-        # Utilisez le bon nom de modèle pour votre version d'API
+
         try:
-            self.model = genai.GenerativeModel('models/gemini-pro')
-            print("✅ Gemini initialized successfully with models/gemini-pro")
+            self.model = genai.GenerativeModel('models/gemini-2.0-flash')
+            print("Gemini initialized successfully with models/gemini-2.0-flash")
         except Exception as e:
-            print(f"❌ Error with models/gemini-pro: {e}")
-            # Fallback à l'ancien nom
+            print(f"Error with models/gemini-2.0-flash: {e}")
+            # Fallback to other models
             try:
-                self.model = genai.GenerativeModel('gemini-pro')
-                print("✅ Gemini initialized successfully with gemini-pro")
+                self.model = genai.GenerativeModel('models/gemini-flash-latest')
+                print("Gemini initialized successfully with models/gemini-flash-latest")
             except Exception as e2:
-                print(f"❌ Both model attempts failed: {e2}")
-                raise
+                print(f"Error with models/gemini-flash-latest: {e2}")
+                try:
+                    self.model = genai.GenerativeModel('models/gemini-pro-latest')
+                    print("Gemini initialized successfully with models/gemini-pro-latest")
+                except Exception as e3:
+                    print(f"All model attempts failed: {e3}")
+                    raise
         
     def transform_question_to_sparql(self, question: str) -> str:
         """Transform natural language question to SPARQL using Gemini ONLY"""
@@ -49,6 +55,55 @@ class GeminiSPARQLTransformer:
             print(f"Gemini API error: {e}")
             return self._get_fallback_query(question)
     
+    def transform_taln_analysis_to_sparql(self, taln_analysis: Dict[str, Any]) -> str:
+        """
+        Transform TALN analysis result to SPARQL using Gemini.
+        This is the new method that works with TALN extracted data.
+        
+        Args:
+            taln_analysis: Dictionary containing TALN analysis results
+            
+        Returns:
+            Generated SPARQL query string
+        """
+        try:
+            print(f"DEBUG: Starting Gemini SPARQL generation")
+            print(f"DEBUG: TALN Analysis keys: {list(taln_analysis.keys())}")
+            print(f"DEBUG: Entities detected: {len(taln_analysis.get('entities', []))}")
+            print(f"DEBUG: Intent: {taln_analysis.get('intent', {}).get('primary_intent', 'unknown')}")
+            
+            prompt = self._build_taln_prompt(taln_analysis)
+            print(f"DEBUG: Prompt length: {len(prompt)} characters")
+            
+            response = self.model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.1,
+                    top_p=0.8,
+                    top_k=40,
+                    max_output_tokens=1200,
+                )
+            )
+            
+            print(f"DEBUG: Gemini response received: {len(response.text)} characters")
+            sparql_query = self._extract_sparql_query(response.text)
+            print(f"DEBUG: Extracted SPARQL query: {len(sparql_query)} characters")
+            print(f"DEBUG: Query preview: {sparql_query[:200]}...")
+            
+            validated_query = self._validate_and_clean_query(sparql_query)
+            print(f"DEBUG: Final validated query: {len(validated_query)} characters")
+            
+            return validated_query
+            
+        except Exception as e:
+            print(f"ERROR: Gemini API error with TALN analysis: {e}")
+            print(f"DEBUG: Falling back to original question method")
+            # Fallback to original question if available
+            original_question = taln_analysis.get('original_question', '')
+            if original_question:
+                return self.transform_question_to_sparql(original_question)
+            return self._get_fallback_query("events")
+    
     def _build_prompt(self, question: str) -> str:
         """Build the prompt for Gemini - FOCUS ON DYNAMIC GENERATION"""
         return f"""You are a SPARQL query generator for an ecological events platform. Convert the natural language question to a valid SPARQL query.
@@ -57,7 +112,7 @@ ONTOLOGY CONTEXT:
 Prefix: eco: <http://www.semanticweb.org/eco-ontology#>
 
 MAIN CLASSES:
-- Event, Location, User, Campaign, Resource, Reservation, Certification
+- Event, Location, User, Campaign, Resource, Reservation, Certification, Sponsor, Donation
 
 EVENT PROPERTIES:
 - eventTitle, eventDate, eventDescription, maxParticipants, isLocatedAt, isOrganizedBy, eventStatus, duration, eventImages, eventType
@@ -73,6 +128,12 @@ RESERVATION PROPERTIES:
 
 CERTIFICATION PROPERTIES:
 - awardedTo, issuedBy, certificateCode, pointsEarned, certificationType
+
+SPONSOR PROPERTIES:
+- companyName, industry, contactEmail, phoneNumber, website
+
+DONATION PROPERTIES:
+- donationAmount (or amount for FinancialDonation), currency, dateDonated, description, estimatedValue, hoursDonated, fundsEvent
 
 IMPORTANT QUERY PATTERNS:
 - For event type questions: Use FILTER with CONTAINS/REGEX on eventTitle, eventDescription, or eventType
@@ -92,6 +153,175 @@ CRITICAL RULES:
 7. Be creative and adapt to the specific question
 
 QUESTION: "{question}"
+
+SPARQL QUERY:"""
+    
+    def _build_taln_prompt(self, taln_analysis: Dict[str, Any]) -> str:
+        """
+        Build the prompt for Gemini using TALN analysis results.
+        This provides much more structured and accurate information to Gemini.
+        """
+        original_question = taln_analysis.get('original_question', '')
+        entities = taln_analysis.get('entities', [])
+        intent = taln_analysis.get('intent', {})
+        temporal_info = taln_analysis.get('temporal_info', {})
+        location_info = taln_analysis.get('location_info', {})
+        keywords = taln_analysis.get('keywords', [])
+        relationships = taln_analysis.get('relationships', [])
+        
+        # Build entity context
+        entity_context = ""
+        if entities:
+            entity_list = []
+            for entity in entities:
+                entity_list.append(f"- {entity['text']} ({entity['ontology_class']})")
+            entity_context = f"ENTITIES DETECTED:\n" + "\n".join(entity_list)
+        
+        # Build intent context
+        intent_context = ""
+        if intent:
+            primary_intent = intent.get('primary_intent', 'unknown')
+            query_type = intent.get('query_type', 'general')
+            intent_context = f"USER INTENT: {primary_intent} (Query Type: {query_type})"
+        
+        # Build temporal context
+        temporal_context = ""
+        if temporal_info.get('relative_time'):
+            temporal_context = f"TEMPORAL INFO: {temporal_info['relative_time']}"
+            if temporal_info.get('time_expressions'):
+                temporal_context += f" (Expressions: {', '.join(temporal_info['time_expressions'])})"
+        
+        # Build location context
+        location_context = ""
+        if location_info.get('locations'):
+            locations = location_info['locations']
+            location_context = f"LOCATIONS MENTIONED: {', '.join(locations)}"
+        
+        # Build keyword context
+        keyword_context = ""
+        if keywords:
+            keyword_texts = [kw['text'] for kw in keywords[:10]]  # Limit to 10 most important
+            keyword_context = f"IMPORTANT KEYWORDS: {', '.join(keyword_texts)}"
+        
+        # Build relationship context
+        relationship_context = ""
+        if relationships:
+            rel_texts = []
+            for rel in relationships:
+                rel_texts.append(f"{rel['subject']} -> {rel['predicate']} -> {rel['object']}")
+            relationship_context = f"RELATIONSHIPS: {'; '.join(rel_texts)}"
+        
+        return f"""You are an expert SPARQL query generator for an ecological events platform. Generate a precise SPARQL query based on the structured analysis provided below.
+
+ONTOLOGY CONTEXT:
+PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+PREFIX webprotege: <http://webprotege.stanford.edu/>
+
+MAIN CLASSES AND THEIR PROPERTIES:
+- Event (eco:Event): eventTitle, eventDate, eventDescription, maxParticipants, isLocatedAt, isOrganizedBy, eventStatus, duration, eventImages, eventType
+- EducationalEvent (eco:EducationalEvent): eventTitle, eventDate, eventDescription, maxParticipants, isLocatedAt, isOrganizedBy, eventStatus, duration, eventImages, eventType
+- EntertainmentEvent (eco:EntertainmentEvent): eventTitle, eventDate, eventDescription, maxParticipants, isLocatedAt, isOrganizedBy, eventStatus, duration, eventImages, eventType
+- CompetitiveEvent (eco:CompetitiveEvent): eventTitle, eventDate, eventDescription, maxParticipants, isLocatedAt, isOrganizedBy, eventStatus, duration, eventImages, eventType
+- SocializationEvent (eco:SocializationEvent): eventTitle, eventDate, eventDescription, maxParticipants, isLocatedAt, isOrganizedBy, eventStatus, duration, eventImages, eventType
+- Location (eco:Location): locationName, address, city, country, capacity, price, reserved, inRepair, locationDescription, latitude, longitude, locationImages, locationType
+- Indoor (eco:Indoor): locationName, address, city, country, capacity, price, reserved, inRepair, locationDescription, latitude, longitude, locationImages, locationType
+- Outdoor (eco:Outdoor): locationName, address, city, country, capacity, price, reserved, inRepair, locationDescription, latitude, longitude, locationImages, locationType
+- VirtualPlatform (eco:VirtualPlatform): locationName, address, city, country, capacity, price, reserved, inRepair, locationDescription, latitude, longitude, locationImages, locationType
+- Campaign (eco:Campaign): campaignName, campaignDescription, campaignStatus, startDate, endDate, goal, targetAmount, fundsRaised
+- AwarenessCampaign (eco:AwarenessCampaign): campaignName, campaignDescription, campaignStatus, startDate, endDate, goal
+- CleanupCampaign (eco:CleanupCampaign): campaignName, campaignDescription, campaignStatus, startDate, endDate, goal
+- EventCampaign (eco:EventCampaign): campaignName, campaignDescription, campaignStatus, startDate, endDate, goal, targetParticipants
+- FundingCampaign (eco:FundingCampaign): campaignName, campaignDescription, campaignStatus, startDate, endDate, goal, targetAmount, fundsRaised
+- Resource (eco:Resource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, resourceType
+- DigitalResource (eco:DigitalResource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, resourceType
+- EquipmentResource (eco:EquipmentResource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, equipmentType
+- FinancialResource (eco:FinancialResource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, currency
+- HumanResource (eco:HumanResource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, skillLevel
+- MaterialResource (eco:MaterialResource): resourceName, resourceDescription, resourceCategory, quantityAvailable, unitCost, materialType
+- Volunteer (webprotege:RCXXzqv27uFuX5nYU81XUvw): phone (webprotege:R8BxRbqkCT2nIQCr5UoVlXD), healthIssues (webprotege:R9F95BAS8WtbTv8ZGBaPe42), motivation (webprotege:R9PW79FzwQKWuQYdTdYlHzN), experience (webprotege:R9tdW5crNU837y5TemwdNfR), skills (webprotege:RBqpxvMVBnwM1Wb6OhzTpHf)
+- Assignment (webprotege:Rj2A7xNWLfpNcbE4HJMKqN): startDate (webprotege:RD3Wor03BEPInfzUaMNVPC7), status (webprotege:RDT3XEARggTy1BIBKDXXrmx), rating (webprotege:RRatingAssignment)
+- Certification (eco:Certification): certificateCode, pointsEarned, certificationType, awardedTo, issuedBy
+- Reservation (eco:Reservation): seatNumber, status, belongsToUser, confirmedBy, numberOfTickets, reservationDate
+- Blog (eco:Blog): blogTitle, blogContent, category, publicationDate
+- Sponsor (eco:Sponsor): companyName, industry, contactEmail, phoneNumber, website, hasSponsorshipLevel, makesDonation
+- SponsorshipLevel (eco:SponsorshipLevel): levelName, minAmount, benefits
+- BronzeSponsor (eco:BronzeSponsor): levelName, minAmount, benefits
+- SilverSponsor (eco:SilverSponsor): levelName, minAmount, benefits
+- GoldSponsor (eco:GoldSponsor): levelName, minAmount, benefits
+- PlatinumSponsor (eco:PlatinumSponsor): levelName, minAmount, benefits
+- Donation (eco:Donation): dateDonated, note, donationType, fundsEvent
+- FinancialDonation (eco:FinancialDonation): dateDonated, note, donationType, amount, currency, paymentMethod
+- MaterialDonation (eco:MaterialDonation): dateDonated, note, donationType, itemDescription, estimatedValue, quantity
+- ServiceDonation (eco:ServiceDonation): dateDonated, note, donationType, serviceDescription, hoursDonated
+
+ANALYSIS RESULTS:
+Original Question: "{original_question}"
+
+{entity_context}
+
+{intent_context}
+
+{temporal_context}
+
+{location_context}
+
+{keyword_context}
+
+{relationship_context}
+
+QUERY GENERATION RULES:
+1. Always use PREFIX eco: <http://www.semanticweb.org/eco-ontology#> and PREFIX webprotege: <http://webprotege.stanford.edu/>
+2. Use webprotege: classes for main entities (webprotege:Event, webprotege:Location, etc.)
+3. Use eco: properties for entity attributes (eco:eventTitle, eco:locationName, etc.)
+4. CRITICAL: Always use proper SPARQL syntax: ?entity eco:property ?variable
+5. Use OPTIONAL for properties that might not exist
+6. Use FILTER with CONTAINS/REGEX for text searches
+7. Use FILTER with date comparisons for temporal queries
+8. Use FILTER with city/location matching for location queries
+9. Use ORDER BY when appropriate for sorting
+10. Use LIMIT 20-50 to prevent too many results
+11. Use GROUP BY and COUNT for counting queries
+12. Use UNION for multiple entity types
+13. Make location properties OPTIONAL (locationName, city, etc.)
+14. Return ONLY the SPARQL query, no explanations
+15. Be precise based on the detected entities and intent
+
+SPARQL SYNTAX EXAMPLES:
+- Correct: ?event a eco:Event . ?event eco:eventTitle ?title .
+- Correct: ?event a eco:EducationalEvent . ?event eco:eventTitle ?title .
+- Correct: ?campaign a eco:Campaign . ?campaign eco:campaignName ?name .
+- Correct: ?volunteer a webprotege:RCXXzqv27uFuX5nYU81XUvw . ?volunteer webprotege:R8BxRbqkCT2nIQCr5UoVlXD ?phone .
+- Correct: ?assignment a webprotege:Rj2A7xNWLfpNcbE4HJMKqN . ?assignment webprotege:RDT3XEARggTy1BIBKDXXrmx ?status .
+- Incorrect: eco:eventTitle ?title (missing subject)
+- Incorrect: ?event eco:eventTitle (missing object)
+
+IMPORTANT: For events, use UNION to include all event types:
+{{
+  ?event a eco:Event .
+  ?event eco:eventTitle ?title .
+}}
+UNION
+{{
+  ?event a eco:EducationalEvent .
+  ?event eco:eventTitle ?title .
+}}
+UNION
+{{
+  ?event a eco:EntertainmentEvent .
+  ?event eco:eventTitle ?title .
+}}
+UNION
+{{
+  ?event a eco:CompetitiveEvent .
+  ?event eco:eventTitle ?title .
+}}
+UNION
+{{
+  ?event a eco:SocializationEvent .
+  ?event eco:eventTitle ?title .
+}}
+
+Generate a SPARQL query that accurately addresses the user's intent using the detected entities and relationships:
 
 SPARQL QUERY:"""
     
@@ -128,6 +358,32 @@ SPARQL QUERY:"""
         if not query or 'SELECT' not in query:
             return self._get_fallback_query("events")
         
+        # Fix common SPARQL syntax errors
+        lines = query.split('\n')
+        fixed_lines = []
+        
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith('PREFIX') or line.startswith('SELECT') or line.startswith('WHERE') or line.startswith('LIMIT') or line.startswith('ORDER'):
+                fixed_lines.append(line)
+                continue
+            
+            # Fix missing subject in property statements
+            if line.startswith('eco:') and not line.startswith('eco: '):
+                # This is a property without a subject, skip it
+                print(f"DEBUG: Skipping malformed line: {line}")
+                continue
+            
+            # Fix incomplete triple patterns
+            if line.endswith('eco:') and not line.endswith('eco: .'):
+                # This is an incomplete triple, skip it
+                print(f"DEBUG: Skipping incomplete triple: {line}")
+                continue
+            
+            fixed_lines.append(line)
+        
+        query = '\n'.join(fixed_lines)
+        
         # Ensure location properties are optional
         if '?location eco:locationName ?locationName' in query and 'OPTIONAL' not in query:
             query = query.replace(
@@ -144,13 +400,51 @@ SPARQL QUERY:"""
         # Ensure LIMIT is reasonable
         if 'LIMIT' not in query:
             query += '\nLIMIT 50'
-        
+
+        # Defensive fix: some generated queries expect a property eco:donationType
+        # to be present on donation instances, but in the ontology we model
+        # type via rdf:type (e.g. eco:FinancialDonation) and many individuals
+        # don't have eco:donationType. Make such patterns optional so queries
+        # still return donation rows when donationType is absent.
+        try:
+            # Replace required donationType triples with OPTIONAL blocks
+            query = re.sub(r"\?donation\s+eco:donationType\s+\?donationType\s*\.", \
+                           "OPTIONAL { ?donation eco:donationType ?donationType . }", query)
+        except Exception as e:
+            print(f"DEBUG: failed to apply donationType defensive fix: {e}")
+
+        # Defensive fix: queries that require '?donation a eco:Donation .' will miss
+        # individuals typed as subclasses (e.g. eco:FinancialDonation). Replace a
+        # direct eco:Donation type check with a UNION over known donation subclasses
+        # so we match instances typed with the subclass only.
+        try:
+            query = re.sub(
+                r"\?donation\s+a\s+eco:Donation\s*\.",
+                "{ ?donation a eco:Donation . } UNION { ?donation a eco:FinancialDonation . } UNION { ?donation a eco:MaterialDonation . } UNION { ?donation a eco:ServiceDonation . }",
+                query
+            )
+        except Exception as e:
+            print(f"DEBUG: failed to apply donation subclass union fix: {e}")
+
+        # If the result set includes donations coming from UNIONs, the same
+        # donation node can be matched multiple times (once per matching union
+        # branch). Ensure a DISTINCT select for donation queries to remove
+        # duplicate rows.
+        try:
+            if '?donation' in query and 'SELECT DISTINCT' not in query:
+                # Replace the first occurrence of SELECT with SELECT DISTINCT
+                query = re.sub(r"SELECT\s", "SELECT DISTINCT ", query, count=1)
+        except Exception as e:
+            print(f"DEBUG: failed to enforce DISTINCT on donation queries: {e}")
+
         return query
     
     def _get_fallback_query(self, question: str) -> str:
         """Simple fallback for emergency cases only"""
         return """
-        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+    PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+    PREFIX webprotege: <http://webprotege.stanford.edu/>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
         SELECT ?item ?name ?type
         WHERE {
             {
@@ -160,9 +454,57 @@ SPARQL QUERY:"""
             }
             UNION
             {
+                ?item a eco:EducationalEvent ;
+                     eco:eventTitle ?name .
+                BIND("EducationalEvent" as ?type)
+            }
+            UNION
+            {
+                ?item a eco:EntertainmentEvent ;
+                     eco:eventTitle ?name .
+                BIND("EntertainmentEvent" as ?type)
+            }
+            UNION
+            {
+                ?item a eco:CompetitiveEvent ;
+                     eco:eventTitle ?name .
+                BIND("CompetitiveEvent" as ?type)
+            }
+            UNION
+            {
                 ?item a eco:Location ;
                      eco:locationName ?name .
                 BIND("Location" as ?type)
+            }
+            UNION
+            {
+                ?item a webprotege:RCXXzqv27uFuX5nYU81XUvw ;
+                     rdfs:label ?name .
+                BIND("Volunteer" as ?type)
+            }
+            UNION
+            {
+                ?item a webprotege:Rj2A7xNWLfpNcbE4HJMKqN ;
+                     rdfs:label ?name .
+                BIND("Assignment" as ?type)
+            }
+            UNION
+            {
+                ?item a eco:Campaign ;
+                     eco:campaignName ?name .
+                BIND("Campaign" as ?type)
+            }
+            UNION
+            {
+                ?item a eco:Sponsor ;
+                     eco:companyName ?name .
+                BIND("Sponsor" as ?type)
+            }
+            UNION
+            {
+                ?item a eco:Donation ;
+                     eco:dateDonated ?name .
+                BIND("Donation" as ?type)
             }
         }
         ORDER BY ?type ?name

@@ -1,3 +1,5 @@
+from SPARQLWrapper import SPARQLWrapper, JSON, POST
+
 from SPARQLWrapper import SPARQLWrapper, JSON
 import os
 from dotenv import load_dotenv
@@ -37,6 +39,20 @@ class SPARQLUtils:
             print(f"Erreur SPARQL: {str(e)}")
             print(f"Requête: {query}")
             return {"error": f"Erreur SPARQL: {str(e)}"}
+
+    def execute_update(self, update_query):
+        """Exécute une requête SPARQL Update (INSERT/DELETE)."""
+        try:
+            update_endpoint = self.endpoint + "/update"
+            sparql_upd = SPARQLWrapper(update_endpoint)
+            sparql_upd.setMethod(POST)
+            sparql_upd.setQuery(update_query)
+            sparql_upd.query()
+            return {"status": "success"}
+        except Exception as e:
+            print(f"Erreur SPARQL Update: {str(e)}")
+            print(f"Update: {update_query}")
+            return {"error": f"Erreur SPARQL Update: {str(e)}"}
 
 # Instance globale
 sparql_utils = SPARQLUtils()
