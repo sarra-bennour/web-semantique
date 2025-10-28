@@ -20,8 +20,7 @@ api.interceptors.response.use(
 
 export const searchAPI = {
   semanticSearch: (question) => api.post('/search', { question }),
-  aiSearch: (question) => api.post('/search/ai', { question }),
-  hybridSearch: (question) => api.post('/search/hybrid', { question }),
+
 };
 
 export const sponsorsAPI = {
@@ -39,6 +38,10 @@ export const eventsAPI = {
   getAll: () => api.get('/events'),
   getById: (id) => api.get(`/events/${id}`),
   search: (filters) => api.post('/events/search', filters),
+};
+
+export const ontologyAPI = {
+  getGraph: () => api.get('/ontology/graph'),
 };
 
 export const locationsAPI = {
@@ -70,5 +73,12 @@ export const assignmentsAPI = {
   search: (filters) => api.post('/assignments/search', filters),
   getStatistics: () => api.get('/assignments/statistics'),
 };
+
+export const blogsAPI = {
+  getAll: () => api.get('/blogs'),
+  getById: (id) => api.get(`/blogs/${id}`),
+  search: (filters) => api.post('/blogs/search', filters),
+};
+
 
 export default api;

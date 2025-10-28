@@ -13,6 +13,8 @@ import Sponsors from './pages/sponsors/Sponsors';
 import Donations from './pages/donations/Donations';
 import Volunteers from './pages/volunteers/Volunteers';
 import Assignments from './pages/assignments/Assignments';
+import Blogs from './pages/blogs/Blogs';
+
 
 
 import './App.css';
@@ -36,6 +38,8 @@ function App() {
             <Route path="/donations" element={<Donations />} />
             <Route path="/volunteers" element={<Volunteers />} />
             <Route path="/assignments" element={<Assignments />} />
+            <Route path="/blogs" element={<Blogs />} />
+
             <Route path="*" element={<h2>404 - Page Not Found</h2>} />
           </Routes>
         </div>
