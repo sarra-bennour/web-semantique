@@ -1987,7 +1987,7 @@
         <webprotege:RBNk0vvVsRh8FjaWPGT0XCO rdf:resource="http://www.semanticweb.org/eco-ontology#SophieLeroy"/>
         <webprotege:RBqttmTqH5uyTK64wj0hDiD rdf:resource="http://webprotege.stanford.edu/RDLZr3t8WjBOyvvC3yXh09a"/>
         <webprotege:RD3Wor03BEPInfzUaMNVPC7 rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-03-10</webprotege:RD3Wor03BEPInfzUaMNVPC7>
-        <webprotege:RDT3XEARggTy1BIBKDXXrmx>approuvé</webprotege:RDT3XEARggTy1BIBKDXXrmx>
+        <webprotege:RDT3XEARggTy1BIBKDXXrmx rdf:datatype="http://www.w3.org/2001/XMLSchema#string">approved</webprotege:RDT3XEARggTy1BIBKDXXrmx>
         <webprotege:RRatingAssignment rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5</webprotege:RRatingAssignment>
         <rdfs:label>assignment3</rdfs:label>
     </owl:NamedIndividual>
@@ -2001,7 +2001,7 @@
         <webprotege:RBNk0vvVsRh8FjaWPGT0XCO rdf:resource="http://www.semanticweb.org/eco-ontology#MarcBernard"/>
         <webprotege:RBqttmTqH5uyTK64wj0hDiD rdf:resource="http://webprotege.stanford.edu/RDLZr3t8WjBOyvvC3yXh09a"/>
         <webprotege:RD3Wor03BEPInfzUaMNVPC7 rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-04-05</webprotege:RD3Wor03BEPInfzUaMNVPC7>
-        <webprotege:RDT3XEARggTy1BIBKDXXrmx>approuvé</webprotege:RDT3XEARggTy1BIBKDXXrmx>
+        <webprotege:RDT3XEARggTy1BIBKDXXrmx rdf:datatype="http://www.w3.org/2001/XMLSchema#string">approved</webprotege:RDT3XEARggTy1BIBKDXXrmx>
         <webprotege:RRatingAssignment rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">3</webprotege:RRatingAssignment>
         <rdfs:label>assignment4</rdfs:label>
     </owl:NamedIndividual>
@@ -2015,7 +2015,7 @@
         <webprotege:RBNk0vvVsRh8FjaWPGT0XCO rdf:resource="http://www.semanticweb.org/eco-ontology#AnnaKowalski"/>
         <webprotege:RBqttmTqH5uyTK64wj0hDiD rdf:resource="http://webprotege.stanford.edu/RDLZr3t8WjBOyvvC3yXh09a"/>
         <webprotege:RD3Wor03BEPInfzUaMNVPC7 rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-05-12</webprotege:RD3Wor03BEPInfzUaMNVPC7>
-        <webprotege:RDT3XEARggTy1BIBKDXXrmx>non approuvé</webprotege:RDT3XEARggTy1BIBKDXXrmx>
+        <webprotege:RDT3XEARggTy1BIBKDXXrmx rdf:datatype="http://www.w3.org/2001/XMLSchema#string">rejected</webprotege:RDT3XEARggTy1BIBKDXXrmx>
         <webprotege:RRatingAssignment rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</webprotege:RRatingAssignment>
         <rdfs:label>assignment5</rdfs:label>
     </owl:NamedIndividual>
@@ -2029,8 +2029,8 @@
         <webprotege:RBNk0vvVsRh8FjaWPGT0XCO rdf:resource="http://www.semanticweb.org/eco-ontology#DavidChen"/>
         <webprotege:RBqttmTqH5uyTK64wj0hDiD rdf:resource="http://webprotege.stanford.edu/RDLZr3t8WjBOyvvC3yXh09a"/>
         <webprotege:RD3Wor03BEPInfzUaMNVPC7 rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-06-18</webprotege:RD3Wor03BEPInfzUaMNVPC7>
-        <webprotege:RDT3XEARggTy1BIBKDXXrmx>approuvé</webprotege:RDT3XEARggTy1BIBKDXXrmx>
-        <webprotege:RRatingAssignment rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">4</webprotege:RRatingAssignment>
+        <webprotege:RDT3XEARggTy1BIBKDXXrmx rdf:datatype="http://www.w3.org/2001/XMLSchema#string">rejected</webprotege:RDT3XEARggTy1BIBKDXXrmx>
+        <webprotege:RRatingAssignment rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</webprotege:RRatingAssignment>
         <rdfs:label>assignment6</rdfs:label>
     </owl:NamedIndividual>
     
@@ -2043,7 +2043,7 @@
         <webprotege:RBNk0vvVsRh8FjaWPGT0XCO rdf:resource="http://www.semanticweb.org/eco-ontology#ElenaRodriguez"/>
         <webprotege:RBqttmTqH5uyTK64wj0hDiD rdf:resource="http://webprotege.stanford.edu/RDLZr3t8WjBOyvvC3yXh09a"/>
         <webprotege:RD3Wor03BEPInfzUaMNVPC7 rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-07-25</webprotege:RD3Wor03BEPInfzUaMNVPC7>
-        <webprotege:RDT3XEARggTy1BIBKDXXrmx>approuvé</webprotege:RDT3XEARggTy1BIBKDXXrmx>
+        <webprotege:RDT3XEARggTy1BIBKDXXrmx rdf:datatype="http://www.w3.org/2001/XMLSchema#string">approved</webprotege:RDT3XEARggTy1BIBKDXXrmx>
         <webprotege:RRatingAssignment rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5</webprotege:RRatingAssignment>
         <rdfs:label>assignment7</rdfs:label>
     </owl:NamedIndividual>
@@ -2121,7 +2121,7 @@
         <webprotege:RBNk0vvVsRh8FjaWPGT0XCO rdf:resource="http://www.semanticweb.org/eco-ontology#JohnDoe"/>
         <webprotege:RBqttmTqH5uyTK64wj0hDiD rdf:resource="http://webprotege.stanford.edu/RDLZr3t8WjBOyvvC3yXh09a"/>
         <webprotege:RD3Wor03BEPInfzUaMNVPC7 rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-01-15</webprotege:RD3Wor03BEPInfzUaMNVPC7>
-        <webprotege:RDT3XEARggTy1BIBKDXXrmx>approuvé</webprotege:RDT3XEARggTy1BIBKDXXrmx>
+        <webprotege:RDT3XEARggTy1BIBKDXXrmx rdf:datatype="http://www.w3.org/2001/XMLSchema#string">approved</webprotege:RDT3XEARggTy1BIBKDXXrmx>
         <webprotege:RRatingAssignment rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">4</webprotege:RRatingAssignment>
         <rdfs:label>assignment1</rdfs:label>
     </owl:NamedIndividual>
@@ -2135,7 +2135,7 @@
         <webprotege:RBNk0vvVsRh8FjaWPGT0XCO rdf:resource="http://www.semanticweb.org/eco-ontology#MarieMartin"/>
         <webprotege:RBqttmTqH5uyTK64wj0hDiD rdf:resource="http://webprotege.stanford.edu/RDLZr3t8WjBOyvvC3yXh09a"/>
         <webprotege:RD3Wor03BEPInfzUaMNVPC7 rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2024-02-20</webprotege:RD3Wor03BEPInfzUaMNVPC7>
-        <webprotege:RDT3XEARggTy1BIBKDXXrmx>non approuvé</webprotege:RDT3XEARggTy1BIBKDXXrmx>
+        <webprotege:RDT3XEARggTy1BIBKDXXrmx rdf:datatype="http://www.w3.org/2001/XMLSchema#string">rejected</webprotege:RDT3XEARggTy1BIBKDXXrmx>
         <webprotege:RRatingAssignment rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</webprotege:RRatingAssignment>
         <rdfs:label>assignment2</rdfs:label>
     </owl:NamedIndividual>
