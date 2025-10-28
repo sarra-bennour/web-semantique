@@ -1,7 +1,14 @@
 from flask import Blueprint, jsonify, request
 from sparql_utils import sparql_utils
+from modules.gemini_sparql_service import GeminiSPARQLTransformer
 
 reservations_bp = Blueprint('reservations', __name__)
+
+try:
+    transformer = GeminiSPARQLTransformer()
+except Exception as e:
+    print(f"⚠️ Warning: Gemini not available: {e}")
+    transformer = None
 
 @reservations_bp.route('/reservations', methods=['GET'])
 def get_reservations():
@@ -160,3 +167,30 @@ def get_reservations_stats():
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@reservations_bp.route('/reservations/search/semantic', methods=['POST'])
+def semantic_search_reservations():
+    """Recherche sémantique de réservations avec Gemini"""
+    data = request.json
+    question = data.get('question', '')
+    
+    if not question:
+        return jsonify({"error": "Question is required"}), 400
+    
+    if not transformer:
+        return jsonify({"error": "Gemini service not available"}), 500
+    
+    try:
+        # Générer la requête SPARQL avec Gemini
+        sparql_query = transformer.transform_question_to_sparql(question)
+        
+        # Exécuter la requête
+        results = sparql_utils.execute_query(sparql_query)
+        
+        return jsonify({
+            "original_question": question,
+            "generated_sparql": sparql_query,
+            "results": results
+        })
+    except Exception as e:
+        return jsonify({"error": f"Erreur: {str(e)}"}), 500

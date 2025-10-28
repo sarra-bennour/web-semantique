@@ -413,16 +413,27 @@ SPARQL QUERY:"""
         except Exception as e:
             print(f"DEBUG: failed to apply donationType defensive fix: {e}")
 
-        # Defensive fix: queries that require '?donation a eco:Donation .' will miss
-        # individuals typed as subclasses (e.g. eco:FinancialDonation). Replace a
-        # direct eco:Donation type check with a UNION over known donation subclasses
-        # so we match instances typed with the subclass only.
+        # Defensive fix: queries that require '?donation a eco:Donation .' or that
+        # ask for a specific donation subclass (e.g. eco:ServiceDonation) can miss
+        # individuals typed in related subclasses. Replace any direct type check
+        # on ?donation for a class whose name ends with 'Donation' with a UNION
+        # covering the known donation classes so instances typed with subclasses
+        # are still matched.
         try:
-            query = re.sub(
-                r"\?donation\s+a\s+eco:Donation\s*\.",
-                "{ ?donation a eco:Donation . } UNION { ?donation a eco:FinancialDonation . } UNION { ?donation a eco:MaterialDonation . } UNION { ?donation a eco:ServiceDonation . }",
-                query
-            )
+            def _donation_union_replacer(m):
+                cls = m.group(1)
+                # Only apply when the matched class name ends with 'Donation'
+                if not cls or not cls.endswith('Donation'):
+                    return m.group(0)
+                unions = [
+                    "{ ?donation a eco:Donation . }",
+                    "{ ?donation a eco:FinancialDonation . }",
+                    "{ ?donation a eco:MaterialDonation . }",
+                    "{ ?donation a eco:ServiceDonation . }"
+                ]
+                return " UNION ".join(unions)
+
+            query = re.sub(r"\?donation\s+a\s+eco:([A-Za-z0-9_]+)\s*\.", _donation_union_replacer, query)
         except Exception as e:
             print(f"DEBUG: failed to apply donation subclass union fix: {e}")
 
@@ -441,10 +452,471 @@ SPARQL QUERY:"""
     
     def _get_fallback_query(self, question: str) -> str:
         """Simple fallback for emergency cases only"""
+        question_lower = question.lower()
+        
+        # Specific handling for volunteer queries
+        if 'volontaire' in question_lower or 'volunteer' in question_lower:
+            # "compétences" or "skills"
+            if 'compétence' in question_lower or 'skill' in question_lower or 'compétences' in question_lower:
+                return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        SELECT ?label ?skills ?activityLevel
+        WHERE {
+            ?volunteer a webprotege:RCXXzqv27uFuX5nYU81XUvw .
+            ?volunteer webprotege:RBqpxvMVBnwM1Wb6OhzTpHf ?skills .
+            OPTIONAL { ?volunteer rdfs:label ?label }
+            OPTIONAL { ?volunteer webprotege:RCHqvY6cUdoI8XfAt441VX0 ?activityLevel }
+        }
+        ORDER BY ?label
+        LIMIT 50
+        """
+            # "expérience" or "experience"
+            elif 'expérience' in question_lower or 'experience' in question_lower:
+                return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        SELECT ?label ?experience ?activityLevel ?skills
+        WHERE {
+            ?volunteer a webprotege:RCXXzqv27uFuX5nYU81XUvw .
+            ?volunteer webprotege:R9tdW5crNU837y5TemwdNfR ?experience .
+            OPTIONAL { ?volunteer rdfs:label ?label }
+            OPTIONAL { ?volunteer webprotege:RCHqvY6cUdoI8XfAt441VX0 ?activityLevel }
+            OPTIONAL { ?volunteer webprotege:RBqpxvMVBnwM1Wb6OhzTpHf ?skills }
+        }
+        ORDER BY ?label
+        LIMIT 50
+        """
+            # "contacts" or "contact"
+            elif 'contact' in question_lower:
+                return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        SELECT ?label ?phone ?email
+        WHERE {
+            ?volunteer a webprotege:RCXXzqv27uFuX5nYU81XUvw .
+            OPTIONAL { ?volunteer rdfs:label ?label }
+            OPTIONAL { ?volunteer webprotege:R8BxRbqkCT2nIQCr5UoVlXD ?phone }
+            OPTIONAL { 
+                ?volunteer webprotege:RBNk0vvVsRh8FjaWPGT0XCO ?user .
+                ?user rdfs:comment ?email
+            }
+        }
+        ORDER BY ?label
+        LIMIT 50
+        """
+            # Default: all volunteers
+            else:
+                return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        SELECT ?volunteer ?label ?phone ?activityLevel ?skills ?experience
+        WHERE {
+            ?volunteer a webprotege:RCXXzqv27uFuX5nYU81XUvw .
+            OPTIONAL { ?volunteer rdfs:label ?label }
+            OPTIONAL { ?volunteer webprotege:R8BxRbqkCT2nIQCr5UoVlXD ?phone }
+            OPTIONAL { ?volunteer webprotege:RCHqvY6cUdoI8XfAt441VX0 ?activityLevel }
+            OPTIONAL { ?volunteer webprotege:RBqpxvMVBnwM1Wb6OhzTpHf ?skills }
+            OPTIONAL { ?volunteer webprotege:R9tdW5crNU837y5TemwdNfR ?experience }
+        }
+        ORDER BY ?label
+        LIMIT 50
+        """
+        
+        # Specific handling for assignment queries
+        if 'assignement' in question_lower or 'assignment' in question_lower:
+            # "approuvés" or "approved"
+            if 'approuvé' in question_lower or 'approuvés' in question_lower or 'approved' in question_lower:
+                return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        SELECT ?assignment ?label ?status ?rating ?startDate
+        WHERE {
+            ?assignment a webprotege:Rj2A7xNWLfpNcbE4HJMKqN .
+            ?assignment webprotege:RDT3XEARggTy1BIBKDXXrmx ?status .
+            FILTER(CONTAINS(LCASE(STR(?status)), "approuv") || CONTAINS(LCASE(STR(?status)), "approved") || LCASE(STR(?status)) = "approved")
+            OPTIONAL { ?assignment rdfs:label ?label }
+            OPTIONAL { ?assignment webprotege:RRatingAssignment ?rating }
+            OPTIONAL { ?assignment webprotege:RD3Wor03BEPInfzUaMNVPC7 ?startDate }
+        }
+        ORDER BY ?assignment
+        LIMIT 50
+        """
+            # "rejetés" or "rejected"
+            elif 'rejeté' in question_lower or 'rejetés' in question_lower or 'rejected' in question_lower:
+                return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        SELECT ?assignment ?label ?status ?rating ?startDate
+        WHERE {
+            ?assignment a webprotege:Rj2A7xNWLfpNcbE4HJMKqN .
+            ?assignment webprotege:RDT3XEARggTy1BIBKDXXrmx ?status .
+            FILTER(CONTAINS(LCASE(STR(?status)), "rejet") || CONTAINS(LCASE(STR(?status)), "rejected") || LCASE(STR(?status)) = "rejected")
+            OPTIONAL { ?assignment rdfs:label ?label }
+            OPTIONAL { ?assignment webprotege:RRatingAssignment ?rating }
+            OPTIONAL { ?assignment webprotege:RD3Wor03BEPInfzUaMNVPC7 ?startDate }
+        }
+        ORDER BY ?assignment
+        LIMIT 50
+        """
+            # "statistiques" or "statistics"
+            elif 'statistique' in question_lower or 'statistics' in question_lower:
+                return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        SELECT (COUNT(?assignment) as ?totalAssignments) 
+               (COUNT(?approved) as ?approvedCount)
+               (COUNT(?rejected) as ?rejectedCount)
+               (COUNT(?pending) as ?pendingCount)
+               (AVG(?rating) as ?averageRating)
+        WHERE {
+            ?assignment a webprotege:Rj2A7xNWLfpNcbE4HJMKqN .
+            OPTIONAL { 
+                ?assignment webprotege:RDT3XEARggTy1BIBKDXXrmx ?status .
+                FILTER(CONTAINS(LCASE(STR(?status)), "approuv") || CONTAINS(LCASE(STR(?status)), "approved") || LCASE(STR(?status)) = "approved")
+                BIND(?assignment as ?approved)
+            }
+            OPTIONAL { 
+                ?assignment webprotege:RDT3XEARggTy1BIBKDXXrmx ?status .
+                FILTER(CONTAINS(LCASE(STR(?status)), "rejet") || CONTAINS(LCASE(STR(?status)), "rejected") || LCASE(STR(?status)) = "rejected")
+                BIND(?assignment as ?rejected)
+            }
+            OPTIONAL { 
+                ?assignment webprotege:RDT3XEARggTy1BIBKDXXrmx ?status .
+                FILTER(LCASE(STR(?status)) = "pending" || LCASE(STR(?status)) = "en attente")
+                BIND(?assignment as ?pending)
+            }
+            OPTIONAL { ?assignment webprotege:RRatingAssignment ?rating }
+        }
+        """
+            # "notes" or "ratings"
+            elif 'note' in question_lower or 'rating' in question_lower:
+                return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        SELECT ?assignment ?label ?rating ?status
+        WHERE {
+            ?assignment a webprotege:Rj2A7xNWLfpNcbE4HJMKqN .
+            ?assignment webprotege:RRatingAssignment ?rating .
+            OPTIONAL { ?assignment rdfs:label ?label }
+            OPTIONAL { ?assignment webprotege:RDT3XEARggTy1BIBKDXXrmx ?status }
+        }
+        ORDER BY DESC(?rating)
+        LIMIT 50
+        """
+            # Default: all assignments
+            else:
+                return """
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        SELECT ?assignment ?label ?status ?rating ?startDate
+        WHERE {
+            ?assignment a webprotege:Rj2A7xNWLfpNcbE4HJMKqN .
+            OPTIONAL { ?assignment rdfs:label ?label }
+            OPTIONAL { ?assignment webprotege:RDT3XEARggTy1BIBKDXXrmx ?status }
+            OPTIONAL { ?assignment webprotege:RRatingAssignment ?rating }
+            OPTIONAL { ?assignment webprotege:RD3Wor03BEPInfzUaMNVPC7 ?startDate }
+        }
+        ORDER BY ?assignment
+        LIMIT 50
+        """
+        
+        # Specific handling for reservation queries
+        if 'réservation' in question_lower or 'reservation' in question_lower or 'reserve' in question_lower:
+            # "par événement" or "by event" means group by event with count
+            if 'par événement' in question_lower or 'by event' in question_lower or 'par event' in question_lower:
+                return """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        SELECT ?eventTitle (COUNT(?reservation) as ?reservationCount)
+        WHERE {
+            ?reservation a eco:Reservation .
+            OPTIONAL {
+                ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
+                ?event eco:eventTitle ?eventTitle .
+            }
+        }
+        GROUP BY ?eventTitle
+        ORDER BY ?eventTitle
+        LIMIT 50
+        """
+            elif 'confirmée' in question_lower or 'confirmed' in question_lower or 'confirme' in question_lower:
+                return """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userLastName ?userEmail
+        WHERE {
+            ?reservation a eco:Reservation .
+            ?reservation webprotege:R9wdyKGFoajnFCFN4oqnwHr ?status .
+            FILTER(LCASE(STR(?status)) = "confirmed" || LCASE(STR(?status)) = "confirmée" || LCASE(STR(?status)) = "confirme")
+            OPTIONAL { ?reservation webprotege:R7QgAmvOpBSpwRmRrDZL8VE ?seatNumber }
+            OPTIONAL {
+                ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
+                ?event eco:eventTitle ?eventTitle .
+            }
+            OPTIONAL {
+                ?reservation eco:belongsToUser ?user .
+                ?user eco:firstName ?userName .
+                OPTIONAL { ?user eco:lastName ?userLastName }
+                OPTIONAL { ?user eco:email ?userEmail }
+            }
+        }
+        ORDER BY ?reservation
+        LIMIT 50
+        """
+            elif 'en attente' in question_lower or 'pending' in question_lower or 'attente' in question_lower:
+                return """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userLastName ?userEmail
+        WHERE {
+            ?reservation a eco:Reservation .
+            ?reservation webprotege:R9wdyKGFoajnFCFN4oqnwHr ?status .
+            FILTER(LCASE(STR(?status)) = "pending" || LCASE(STR(?status)) = "attente" || LCASE(STR(?status)) = "en attente")
+            OPTIONAL { ?reservation webprotege:R7QgAmvOpBSpwRmRrDZL8VE ?seatNumber }
+            OPTIONAL {
+                ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
+                ?event eco:eventTitle ?eventTitle .
+            }
+            OPTIONAL {
+                ?reservation eco:belongsToUser ?user .
+                ?user eco:firstName ?userName .
+                OPTIONAL { ?user eco:lastName ?userLastName }
+                OPTIONAL { ?user eco:email ?userEmail }
+            }
+        }
+        ORDER BY ?reservation
+        LIMIT 50
+        """
+            else:
+                return """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        SELECT ?reservation ?seatNumber ?status ?eventTitle ?userName ?userLastName ?userEmail
+        WHERE {
+            ?reservation a eco:Reservation .
+            OPTIONAL { ?reservation webprotege:R7QgAmvOpBSpwRmRrDZL8VE ?seatNumber }
+            OPTIONAL { ?reservation webprotege:R9wdyKGFoajnFCFN4oqnwHr ?status }
+            OPTIONAL {
+                ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
+                ?event eco:eventTitle ?eventTitle .
+            }
+            OPTIONAL {
+                ?reservation eco:belongsToUser ?user .
+                ?user eco:firstName ?userName .
+                OPTIONAL { ?user eco:lastName ?userLastName }
+                OPTIONAL { ?user eco:email ?userEmail }
+            }
+        }
+        ORDER BY ?reservation
+        LIMIT 50
+        """
+        
+        # Specific handling for certification queries
+        if 'certification' in question_lower or 'certificat' in question_lower:
+            # "qui a reçu" or "who received" - show recipients
+            if 'qui a reçu' in question_lower or 'who received' in question_lower or 'qui a reçu' in question_lower:
+                return """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        SELECT ?awardedToName ?awardedToEmail (COUNT(?certification) as ?certificationCount) (SUM(?pointsEarned) as ?totalPoints)
+        WHERE {
+            ?certification a eco:Certification .
+            ?certification eco:awardedTo ?recipient .
+            ?recipient eco:firstName ?awardedToName .
+            OPTIONAL { ?recipient eco:email ?awardedToEmail }
+            OPTIONAL { ?certification webprotege:R9gsGMKtVBKEAd4d8I75UkC ?pointsEarned }
+        }
+        GROUP BY ?awardedToName ?awardedToEmail
+        ORDER BY DESC(?certificationCount)
+        LIMIT 50
+        """
+            # "qui émet" or "who issues" - show issuers
+            elif 'qui émet' in question_lower or 'who issues' in question_lower or 'who issues' in question_lower or 'émet' in question_lower:
+                return """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        SELECT ?issuerName ?issuerEmail (COUNT(?certification) as ?issuedCount)
+        WHERE {
+            ?certification a eco:Certification .
+            ?certification eco:issuedBy ?issuer .
+            ?issuer eco:firstName ?issuerName .
+            OPTIONAL { ?issuer eco:email ?issuerEmail }
+        }
+        GROUP BY ?issuerName ?issuerEmail
+        ORDER BY DESC(?issuedCount)
+        LIMIT 50
+        """
+            # "quels types" or "what types" - show certification types
+            elif 'quels types' in question_lower or 'what types' in question_lower or 'type' in question_lower:
+                return """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        SELECT ?type (COUNT(?certification) as ?certificationCount)
+        WHERE {
+            ?certification a eco:Certification .
+            ?certification webprotege:RBPJvon09P5n1GLdLbu2esV ?type .
+        }
+        GROUP BY ?type
+        ORDER BY DESC(?certificationCount)
+        LIMIT 50
+        """
+            # "par points" or "by points" means order by points
+            elif 'par points' in question_lower or 'by points' in question_lower:
+                return """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        SELECT ?certification ?certificateCode ?pointsEarned ?type ?issuerName ?awardedToName ?eventTitle
+        WHERE {
+            ?certification a eco:Certification .
+            OPTIONAL { ?certification webprotege:R9QGoktbkOBbsLkvgjicNA8 ?certificateCode }
+            OPTIONAL { ?certification webprotege:R9gsGMKtVBKEAd4d8I75UkC ?pointsEarned }
+            OPTIONAL { ?certification webprotege:RBPJvon09P5n1GLdLbu2esV ?type }
+            OPTIONAL {
+                ?certification eco:issuedBy ?issuer .
+                ?issuer eco:firstName ?issuerName .
+            }
+            OPTIONAL {
+                ?certification eco:awardedTo ?recipient .
+                ?recipient eco:firstName ?awardedToName .
+            }
+            OPTIONAL {
+                ?reservation a eco:Reservation .
+                ?reservation eco:belongsToUser ?recipient .
+                ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
+                ?event eco:eventTitle ?eventTitle .
+            }
+        }
+        ORDER BY DESC(?pointsEarned)
+        LIMIT 50
+        """
+            # "émise" or "issued" - show all issued certifications with details
+            elif 'émis' in question_lower or 'issued' in question_lower or 'émises' in question_lower:
+                return """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        SELECT ?certification ?certificateCode ?pointsEarned ?type ?issuerName ?awardedToName ?eventTitle
+        WHERE {
+            ?certification a eco:Certification .
+            OPTIONAL { ?certification webprotege:R9QGoktbkOBbsLkvgjicNA8 ?certificateCode }
+            OPTIONAL { ?certification webprotege:R9gsGMKtVBKEAd4d8I75UkC ?pointsEarned }
+            OPTIONAL { ?certification webprotege:RBPJvon09P5n1GLdLbu2esV ?type }
+            OPTIONAL {
+                ?certification eco:issuedBy ?issuer .
+                ?issuer eco:firstName ?issuerName .
+            }
+            OPTIONAL {
+                ?certification eco:awardedTo ?recipient .
+                ?recipient eco:firstName ?awardedToName .
+            }
+            OPTIONAL {
+                ?reservation a eco:Reservation .
+                ?reservation eco:belongsToUser ?recipient .
+                ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
+                ?event eco:eventTitle ?eventTitle .
+            }
+        }
+        ORDER BY ?certification
+        LIMIT 50
+        """
+            else:
+                return """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        SELECT ?certification ?certificateCode ?pointsEarned ?type ?issuerName ?awardedToName ?eventTitle
+        WHERE {
+            ?certification a eco:Certification .
+            OPTIONAL { ?certification webprotege:R9QGoktbkOBbsLkvgjicNA8 ?certificateCode }
+            OPTIONAL { ?certification webprotege:R9gsGMKtVBKEAd4d8I75UkC ?pointsEarned }
+            OPTIONAL { ?certification webprotege:RBPJvon09P5n1GLdLbu2esV ?type }
+            OPTIONAL {
+                ?certification eco:issuedBy ?issuer .
+                ?issuer eco:firstName ?issuerName .
+            }
+            OPTIONAL {
+                ?certification eco:awardedTo ?recipient .
+                ?recipient eco:firstName ?awardedToName .
+            }
+            OPTIONAL {
+                ?reservation a eco:Reservation .
+                ?reservation eco:belongsToUser ?recipient .
+                ?reservation webprotege:R8r5yxVXnZfa0TwP5biVHiL ?event .
+                ?event eco:eventTitle ?eventTitle .
+            }
+        }
+        ORDER BY ?certification
+        LIMIT 50
+        """
+        
+        # Specific handling for campaign queries
+        if 'campagne' in question_lower or 'campaign' in question_lower:
+            if 'active' in question_lower or 'actif' in question_lower:
+                return """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        SELECT ?campaignName ?campaignDescription ?campaignStatus ?startDate ?endDate ?goal
+        WHERE {
+            {
+                ?campaign a eco:Campaign .
+                ?campaign eco:campaignName ?campaignName .
+                ?campaign eco:campaignStatus ?campaignStatus .
+                FILTER(LCASE(STR(?campaignStatus)) = "active" || LCASE(STR(?campaignStatus)) = "actif")
+            }
+            UNION
+            {
+                ?campaign a eco:CleanupCampaign .
+                ?campaign eco:campaignName ?campaignName .
+                ?campaign eco:campaignStatus ?campaignStatus .
+                FILTER(LCASE(STR(?campaignStatus)) = "active" || LCASE(STR(?campaignStatus)) = "actif")
+            }
+            UNION
+            {
+                ?campaign a eco:AwarenessCampaign .
+                ?campaign eco:campaignName ?campaignName .
+                ?campaign eco:campaignStatus ?campaignStatus .
+                FILTER(LCASE(STR(?campaignStatus)) = "active" || LCASE(STR(?campaignStatus)) = "actif")
+            }
+            UNION
+            {
+                ?campaign a eco:FundingCampaign .
+                ?campaign eco:campaignName ?campaignName .
+                ?campaign eco:campaignStatus ?campaignStatus .
+                FILTER(LCASE(STR(?campaignStatus)) = "active" || LCASE(STR(?campaignStatus)) = "actif")
+            }
+            UNION
+            {
+                ?campaign a eco:EventCampaign .
+                ?campaign eco:campaignName ?campaignName .
+                ?campaign eco:campaignStatus ?campaignStatus .
+                FILTER(LCASE(STR(?campaignStatus)) = "active" || LCASE(STR(?campaignStatus)) = "actif")
+            }
+            OPTIONAL { ?campaign eco:campaignDescription ?campaignDescription }
+            OPTIONAL { ?campaign eco:startDate ?startDate }
+            OPTIONAL { ?campaign eco:endDate ?endDate }
+            OPTIONAL { ?campaign eco:goal ?goal }
+        }
+        ORDER BY ?campaignName
+        LIMIT 50
+        """
+            else:
+                return """
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        SELECT ?campaignName ?campaignDescription ?campaignStatus ?startDate ?endDate ?goal
+        WHERE {
+            ?campaign a eco:Campaign .
+            ?campaign eco:campaignName ?campaignName .
+            OPTIONAL { ?campaign eco:campaignDescription ?campaignDescription }
+            OPTIONAL { ?campaign eco:campaignStatus ?campaignStatus }
+            OPTIONAL { ?campaign eco:startDate ?startDate }
+            OPTIONAL { ?campaign eco:endDate ?endDate }
+            OPTIONAL { ?campaign eco:goal ?goal }
+        }
+        ORDER BY ?campaignName
+        LIMIT 50
+        """
+        
         return """
-    PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
-    PREFIX webprotege: <http://webprotege.stanford.edu/>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX eco: <http://www.semanticweb.org/eco-ontology#>
+        PREFIX webprotege: <http://webprotege.stanford.edu/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
         SELECT ?item ?name ?type
         WHERE {
             {
